@@ -7,6 +7,10 @@ from tempfile import TemporaryFile
 import json
 import argparse
 # /home/rishi/maii/main.py
+from pydub import AudioSegment
+from pydub.playback import play
+
+
 
 def output_audio(text):
     tts = gTTS(text, lang='en')
@@ -15,11 +19,13 @@ def output_audio(text):
 
     tts.write_to_fp(fp)
     fp.seek(0)
-    pygame.mixer.init()
-    pygame.mixer.music.load(fp)
-    pygame.mixer.music.play()
-    while pygame.mixer.music.get_busy():
-        pygame.time.Clock().tick(10)
+    song = AudioSegment.from_file(fp, format="mp3")
+    play(song)
+    # pygame.mixer.init()
+    # pygame.mixer.music.load(fp)
+    # pygame.mixer.music.play()
+    # while pygame.mixer.music.get_busy():
+    #     pygame.time.Clock().tick(10)
 
 def test_connection():
     pass
@@ -51,11 +57,10 @@ recognizer = sr.Recognizer()
 def speech_to_text():
     
     with sr.Microphone() as source:
+        recognizer.adjust_for_ambient_noise(source)
         
         if True:
             print("Listening")
-    
-            recognizer.adjust_for_ambient_noise(source)
     
             audio = recognizer.listen(source)
             
