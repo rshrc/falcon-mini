@@ -1,17 +1,16 @@
-import speech_recognition as sr
-import requests as r
-from gtts import gTTS
-from io import BytesIO
-import pygame
-from tempfile import TemporaryFile
-import json
 import argparse
-# /home/rishi/maii/main.py
+import json
+import os
+from io import BytesIO
+from tempfile import TemporaryFile
+
+import pygame
+import requests as r
+import speech_recognition as sr
+from dotenv import load_dotenv
+from gtts import gTTS
 from pydub import AudioSegment
 from pydub.playback import play
-from dotenv import load_dotenv
-import os
-
 
 load_dotenv()
 
@@ -114,7 +113,4 @@ def main():
             speech_to_text()
 
 if __name__ == "__main__":
-    main()
-
-# play_mp3(audio_source)
- 
+    main() 
