@@ -9,7 +9,13 @@ import argparse
 # /home/rishi/maii/main.py
 from pydub import AudioSegment
 from pydub.playback import play
+from dotenv import load_dotenv
+import os
 
+
+load_dotenv()
+
+API_URL = os.getenv('URL')
 
 
 def output_audio(text):
@@ -76,7 +82,7 @@ def speech_to_text():
                 if len(conversation) > 0:
                     data['conversation'] = json.dumps(conversation)
                 
-                response = r.post('https://ratheeapp.co.in/auth/xyz/', json=data)
+                response = r.post(API_URL, json=data)
         
                 print(response.status_code)
 

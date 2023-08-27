@@ -3,3 +3,4 @@ gTTS
 PyAudio
 pygame
 pydub
+python-dotenv
