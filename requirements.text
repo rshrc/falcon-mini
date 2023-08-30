@@ -6,3 +6,4 @@ pydub
 python-dotenv
 spacy
 fuzzywuzzy
+python-Levenshtein
