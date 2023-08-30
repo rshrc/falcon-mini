@@ -1,23 +1,48 @@
 import argparse
 import json
 import os
+import random
+from email.mime import audio
 from io import BytesIO
 from tempfile import TemporaryFile
-
-import pygame
+import asyncio
 import requests as r
+import spacy
 import speech_recognition as sr
 from dotenv import load_dotenv
+from fuzzywuzzy import fuzz
 from gtts import gTTS
 from pydub import AudioSegment
 from pydub.playback import play
+from spacy.lang.en import English
 
 load_dotenv()
 
 API_URL = os.getenv('URL')
 
+# nlp = spacy.load("en_core_web_sm")
 
-def output_audio(text):
+nlp = English()
+
+
+def check_similar_song(user_input):
+    best_match_ratio = 0
+    best_match_path = None
+
+    for path in audio_files:
+        ratio = fuzz.partial_ratio(
+            user_input.lower(), os.path.basename(path).lower())
+        if ratio > best_match_ratio:
+            best_match_ratio = ratio
+            best_match_path = path
+
+    if best_match_path and best_match_ratio >= 70:  # Adjust the threshold as needed
+        return True, best_match_path
+    else:
+        return False, None
+
+
+def output_voice(text):
     tts = gTTS(text, lang='en')
 
     fp = TemporaryFile()
@@ -26,91 +51,136 @@ def output_audio(text):
     fp.seek(0)
     song = AudioSegment.from_file(fp, format="mp3")
     play(song)
-    # pygame.mixer.init()
-    # pygame.mixer.music.load(fp)
-    # pygame.mixer.music.play()
-    # while pygame.mixer.music.get_busy():
-    #     pygame.time.Clock().tick(10)
+
+
+def play_audio(audio_path):
+    audio = AudioSegment.from_file(audio_path)
+    play(audio)
+    print(f"Playing: {audio_path}")
+
 
 def test_connection():
     pass
 
+
 mp3_fp = BytesIO()
 
-audio_source = "/home/rishi/maii/twinkle.mp3"
 
 # for memory
 conversation = []
 
-def play_mp3(file_path):
-    pygame.init()
-    pygame.mixer.init()
-
-    try:
-        pygame.mixer.music.load(file_path)
-        pygame.mixer.music.play()
-        
-        while pygame.mixer.music.get_busy():
-            pygame.time.Clock().tick(10)
-    except Exception as e:
-        print("Error:", e)
-    finally:
-        pygame.mixer.quit()
-
 
 recognizer = sr.Recognizer()
+
+
+async def update_conversation(input, output):
+    conversation.append(
+        {'role': 'user', 'content': input})
+    conversation.append(
+        {'role': 'assistant', 'content': output})
+    print("Conversation Updated")
+
 def speech_to_text():
-    
+
     with sr.Microphone() as source:
         recognizer.adjust_for_ambient_noise(source)
-        
+
         if True:
-            print("Listening")
-    
+            print("Listening for Wake Word")
+
             audio = recognizer.listen(source)
+
+            print("There was some audio input!")
             
-            try: 
+            try:
                 recognized_text = recognizer.recognize_google(audio)
-        
-                print(f"Speech to text {recognized_text}")
-
-                data = {
-                    'input': recognized_text, 'age': 4, 
-                }
-
-                if len(conversation) > 0:
-                    data['conversation'] = json.dumps(conversation)
+                print(f"Recognized Text : {recognized_text}")
                 
-                response = r.post(API_URL, json=data)
-        
-                print(response.status_code)
+                wake_word = fuzz.partial_ratio(recognized_text, "hey siri")
 
-                speech = response.json()['response']
+                print(f"Wake Word Spoken: {wake_word}")
 
-                conversation.append({'role': 'user', 'content': recognized_text})
-                conversation.append({'role': 'assistant', 'content': speech})
+                if wake_word > 70:
+                    output_voice(random.choice(['yes', 'yes tell me', 'sup', 'whats up', 'yo yo']))
 
-                print(f"Line 75 : {conversation}")
+                    audio = recognizer.listen(source)
 
-                output_audio(speech)
-            
+                    recognized_text = recognizer.recognize_google(audio)
+
+                    print(f"Recognized Instruction : {recognized_text}")
+
+                    doc = nlp(recognized_text)
+
+                    play_intent = any((token.text.lower() == "play" and (token.text.lower(
+                    ) == 'song' or token.text.lower() == 'rhyme')) or token.pos_ == "VERB" for token in doc)
+
+                    print(f"Play Intent? {play_intent}")
+
+                    if play_intent:
+                        similar_song_found, song_path = check_similar_song(
+                            recognized_text)
+                        print(
+                            f"Similar Song Found ? {similar_song_found} and Path {song_path}")
+
+                        if song_path is not None:
+                            play_audio(song_path)
+                            update_conversation(recognized_text, f"Played song {song_path}")
+                        else:
+                            random_song = random.choice(audio_files)
+                            update_conversation(random_song, f"Played song {random_song}")
+                            play_audio(random_song)
+                    else:
+                        data = {
+                            'input': recognized_text, 'age': 4,
+                        }
+
+                        if len(conversation) > 0:
+                            data['conversation'] = json.dumps(conversation)
+
+                        response = r.post(API_URL, json=data)
+
+                        print(response.status_code)
+
+                        speech = response.json()['response']
+                        update_conversation(recognized_text, speech)
+                        
+
+                        print(f"Response : {conversation}")
+
+                        output_voice(speech)
+                print(f"Keep Sleeping")
             except Exception as e:
                 print(f"Some Error Occoured : {e}")
 
 
+audio_files = []
+
+
+def load_audio_files():
+    folder_path = "audio_files"
+
+    for filename in os.listdir(folder_path):
+        if filename.lower().endswith('.mp3'):
+            audio_files.append(os.path.join(folder_path, filename))
+
 
 def main():
-    parser = argparse.ArgumentParser(description="Process input and optionally generate output audio.")
-    parser.add_argument("-O", "--output", dest="output_text", help="Output audio for the given input text")
-    
+    parser = argparse.ArgumentParser(
+        description="Process input and optionally generate output audio.")
+    parser.add_argument("-O", "--output", dest="output_text",
+                        help="Output audio for the given input text")
+
     args = parser.parse_args()
-    
+
     if args.output_text:
-        print(f"Line 112 {args.output_text}")
-        output_audio(args.output_text)
+        print(f"Output {args.output_text}")
+        output_voice(args.output_text)
     else:
+        load_audio_files()
+        print(f"Loaded {len(audio_files)} Songs & Rhymes")
         while True:
             speech_to_text()
 
+
 if __name__ == "__main__":
-    main() 
+    main()

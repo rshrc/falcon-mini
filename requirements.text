@@ -4,3 +4,5 @@ PyAudio
 pygame
 pydub
 python-dotenv
+spacy
+fuzzywuzzy
