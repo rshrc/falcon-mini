@@ -26,7 +26,7 @@ API_URL = os.getenv('URL')
 nlp = English()
 
 
-def check_similar_song(user_input):
+def check_similar_song(user_input: str):
     best_match_ratio = 0
     best_match_path = None
 
@@ -43,7 +43,7 @@ def check_similar_song(user_input):
         return False, None
 
 
-def output_voice(text):
+def output_voice(text: str):
     tts = gTTS(text, lang='en')
 
     fp = TemporaryFile()
@@ -54,7 +54,7 @@ def output_voice(text):
     play(song)
 
 
-def play_audio(audio_path):
+def play_audio(audio_path: str):
     audio = AudioSegment.from_file(audio_path)
     play(audio)
     print(f"Playing: {audio_path}")
@@ -82,7 +82,8 @@ def update_conversation(input, output):
     print("Conversation Updated")
 
 
-def process_instruction(source):
+def process_instruction(source: sr.Recognizer):
+
     while True:
         audio = recognizer.listen(source)
 
