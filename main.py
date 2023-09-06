@@ -1,5 +1,6 @@
 import argparse
 import json
+import sys
 from multiprocessing import process
 import os
 import random
@@ -16,15 +17,26 @@ from gtts import gTTS
 from pydub import AudioSegment
 from pydub.playback import play
 from spacy.lang.en import English
+import alsaaudio
+
 
 load_dotenv()
 
 API_URL = os.getenv('URL')
 
+WAKE_WORD = os.getenv('WAKE_WORD').lower()
+
+
 # nlp = spacy.load("en_core_web_sm")
 
 nlp = English()
 
+def mute_microphone():
+    os.system('amixer set Capture nocap')
+
+# Function to unmute the microphone
+def unmute_microphone():
+    os.system('amixer set Capture cap')
 
 def check_similar_song(user_input: str):
     best_match_ratio = 0
@@ -43,7 +55,8 @@ def check_similar_song(user_input: str):
         return False, None
 
 
-def output_voice(text: str):
+async def output_voice(text: str, expect_return=False):
+    
     tts = gTTS(text, lang='en')
 
     fp = TemporaryFile()
@@ -52,6 +65,9 @@ def output_voice(text: str):
     fp.seek(0)
     song = AudioSegment.from_file(fp, format="mp3")
     play(song)
+   
+
+    return expect_return
 
 
 def play_audio(audio_path: str):
@@ -72,6 +88,7 @@ conversation = []
 
 
 recognizer = sr.Recognizer()
+microphone = sr.Microphone()
 
 
 def update_conversation(input, output):
@@ -81,71 +98,66 @@ def update_conversation(input, output):
         {'role': 'assistant', 'content': output})
     print("Conversation Updated")
 
+async def process_input(recognized_text):
+    doc = nlp(recognized_text)
 
-def process_instruction(source: sr.Recognizer):
+    play_intent = any((token.text.lower() == "play" or (token.text.lower(
+    ) == 'song' or token.text.lower() == 'rhyme')) or token.pos_ == "VERB" for token in doc)
+    stop_intent = any(
+        (token.text.lower() == "stop" or token.pos_ == "VERB") or
+        (token.text.lower() == "quit" or token.pos_ == "VERB") or
+        (token.text.lower() == "exit" or token.pos_ == "VERB") or
+        (token.text.lower() == "end" or token.pos_ == "VERB")
+        for token in doc
+    )
 
-    while True:
-        audio = recognizer.listen(source)
+    print(f"Play Intent? {play_intent}")
+    print(f"Stop Intent? {stop_intent}")
 
-        recognized_text = recognizer.recognize_google(audio)
+    if play_intent:
+        similar_song_found, song_path = check_similar_song(
+            recognized_text)
+        print(
+            f"Similar Song Found ? {similar_song_found} and Path {song_path}")
 
-        print(f"Recognized Instruction : {recognized_text}")
-
-        doc = nlp(recognized_text)
-
-        play_intent = any((token.text.lower() == "play" and (token.text.lower(
-        ) == 'song' or token.text.lower() == 'rhyme')) or token.pos_ == "VERB" for token in doc)
-        stop_intent = any(
-            (token.text.lower() == "stop" or token.pos_ == "VERB") or
-            (token.text.lower() == "quit" or token.pos_ == "VERB") or
-            (token.text.lower() == "exit" or token.pos_ == "VERB") or
-            (token.text.lower() == "end" or token.pos_ == "VERB")
-            for token in doc
-        )
-
-        print(f"Play Intent? {play_intent}")
-        print(f"Stop Intent? {stop_intent}")
-
-        if play_intent:
-            similar_song_found, song_path = check_similar_song(
-                recognized_text)
-            print(
-                f"Similar Song Found ? {similar_song_found} and Path {song_path}")
-
-            if song_path is not None:
-                play_audio(song_path)
-                update_conversation(
-                    recognized_text, f"Played song {song_path}")
-            else:
-                random_song = random.choice(audio_files)
-                update_conversation(random_song, f"Played song {random_song}")
-                play_audio(random_song)
-        elif stop_intent:
-            output_voice("Sure thing! Stopping")
-            return
+        if song_path is not None:
+            play_audio(song_path)
+            update_conversation(
+                recognized_text, f"Played song {song_path}")
         else:
-            data = {
-                'input': recognized_text, 'age': 4,
-            }
+            random_song = random.choice(audio_files)
+            update_conversation(random_song, f"Played song {random_song}")
+            play_audio(random_song)
+    elif stop_intent:
+        await output_voice("Sure thing! Stopping")
+        return
+    else:
+        data = {
+            'input': recognized_text, 'age': 4,
+        }
 
-            if len(conversation) > 0:
-                data['conversation'] = json.dumps(conversation)
+        if len(conversation) > 0:
+            data['conversation'] = json.dumps(conversation)
 
-            response = r.post(API_URL, json=data)
+        print(f"Line 126 {data}")
 
-            print(response.status_code)
+        response = r.post(API_URL, json=data)
 
-            speech = response.json()['response']
-            update_conversation(recognized_text, speech)
+        print(response.status_code)
 
-            print(f"Response : {conversation}")
+        speech = response.json()['response']
+        update_conversation(recognized_text, speech)
 
-            output_voice(speech)
+        print(f"Response : {conversation}")
 
+        await output_voice(speech)
 
-def speech_to_text():
+def voice_filler():
+    return random.choice(seq=['yes', 'yes tell me', 'sup', 'whats up', 'yo yo'])
 
+async def speech_to_text():
     with sr.Microphone() as source:
+        
         recognizer.adjust_for_ambient_noise(source)
 
         if True:
@@ -156,75 +168,47 @@ def speech_to_text():
             print("There was some audio input!")
 
             try:
-                recognized_text = recognizer.recognize_google(audio)
+                recognized_text = recognizer.recognize_google(audio).lower()
                 print(f"Recognized Text : {recognized_text}")
 
-                wake_word = fuzz.partial_ratio(recognized_text, "hey google")
+                wake_word = fuzz.partial_ratio(recognized_text, WAKE_WORD)
 
                 print(f"Wake Word Spoken: {wake_word}")
 
                 if wake_word > 70:
-                    # output_voice(random.choice(
-                    #     ['yes', 'yes tell me', 'sup', 'whats up', 'yo yo']))
+                    if recognized_text.lower().startswith(WAKE_WORD) and len(recognized_text) == len(WAKE_WORD):
+                        while True:
+                            # recognizer.pause_threshold()
+                            # mute_microphone()
+                            response = await output_voice(voice_filler(), expect_return=True)
+                            
+                            if response:
 
-                    while True:
-                        audio = recognizer.listen(source)
+                                print("ARE WE READY TO LISTEN")
+                                # unmute_microphone()
+                                print("Microphone is back Online")
+                                # break
+                                # audio captured again after normal wake word is detected
+                                # with sr.Microphone as source2:
+                                print("Listeing for second command!")
+                                audio = recognizer.listen(source)
 
-                        recognized_text = recognizer.recognize_google(audio)
+                                print("I GUESS WE ARE")
 
-                        print(f"Recognized Instruction : {recognized_text}")
+                                recognized_text = recognizer.recognize_google(audio)
 
-                        doc = nlp(recognized_text)
+                                print(f"Recognized Instruction : {recognized_text}")
 
-                        play_intent = any((token.text.lower() == "play" or (token.text.lower(
-                        ) == 'song' or token.text.lower() == 'rhyme')) or token.pos_ == "VERB" for token in doc)
-                        stop_intent = any(
-                            (token.text.lower() == "stop" or token.pos_ == "VERB") or
-                            (token.text.lower() == "quit" or token.pos_ == "VERB") or
-                            (token.text.lower() == "exit" or token.pos_ == "VERB") or
-                            (token.text.lower() == "end" or token.pos_ == "VERB")
-                            for token in doc
-                        )
+                                await process_input(recognized_text)
+                        
+                    else :
+                        command = recognized_text.lower().replace(WAKE_WORD, "").strip()
 
-                        print(f"Play Intent? {play_intent}")
-                        print(f"Stop Intent? {stop_intent}")
+                        await process_input(command)
 
-                        if play_intent:
-                            similar_song_found, song_path = check_similar_song(
-                                recognized_text)
-                            print(
-                                f"Similar Song Found ? {similar_song_found} and Path {song_path}")
-
-                            if song_path is not None:
-                                play_audio(song_path)
-                                update_conversation(
-                                    recognized_text, f"Played song {song_path}")
-                            else:
-                                random_song = random.choice(audio_files)
-                                update_conversation(random_song, f"Played song {random_song}")
-                                play_audio(random_song)
-                        elif stop_intent:
-                            output_voice("Sure thing! Stopping")
-                            return
-                        else:
-                            data = {
-                                'input': recognized_text, 'age': 4,
-                            }
-
-                            if len(conversation) > 0:
-                                data['conversation'] = json.dumps(conversation)
-
-                            response = r.post(API_URL, json=data)
-
-                            print(response.status_code)
-
-                            speech = response.json()['response']
-                            update_conversation(recognized_text, speech)
-
-                            print(f"Response : {conversation}")
-
-                            output_voice(speech)
+                        
                 else:
+                    pass
                     print(f"Keep Sleeping")
             except Exception as e:
                 print(f"Some Error Occoured : {e}")
@@ -241,7 +225,7 @@ def load_audio_files():
             audio_files.append(os.path.join(folder_path, filename))
 
 
-def main():
+async def main():
     parser = argparse.ArgumentParser(
         description="Process input and optionally generate output audio.")
     parser.add_argument("-O", "--output", dest="output_text",
@@ -251,13 +235,13 @@ def main():
 
     if args.output_text:
         print(f"Output {args.output_text}")
-        output_voice(args.output_text)
+        await output_voice(args.output_text)
     else:
         load_audio_files()
         print(f"Loaded {len(audio_files)} Songs & Rhymes")
         while True:
-            speech_to_text()
+            await speech_to_text()
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
