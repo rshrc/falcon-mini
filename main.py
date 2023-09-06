@@ -163,8 +163,8 @@ def speech_to_text():
                 print(f"Wake Word Spoken: {wake_word}")
 
                 if wake_word > 70:
-                    output_voice(random.choice(
-                        ['yes', 'yes tell me', 'sup', 'whats up', 'yo yo']))
+                    # output_voice(random.choice(
+                    #     ['yes', 'yes tell me', 'sup', 'whats up', 'yo yo']))
 
                     while True:
                         audio = recognizer.listen(source)
