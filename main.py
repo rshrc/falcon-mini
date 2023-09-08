@@ -237,8 +237,6 @@ def load_audio_files():
             audio_files.append(os.path.join(folder_path, filename))
     
     global trie  # Assuming trie is a global variable
-    trie = build_trie(map(str.lower, map(os.path.basename, audio_files)))
-
 
 async def main():
     parser = argparse.ArgumentParser(
