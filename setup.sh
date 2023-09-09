@@ -1,4 +1,8 @@
 #!/bin/bash
+sudo sed -i '1i\deb http://mirror.mythic-beasts.com/raspbian/raspbian buster main contrib non-free rpi' /etc/apt/sources.list
+
+# Comment out other lines if not already commented
+sudo sed -i -e '2,$s/^deb/#deb/' /etc/apt/sources.list
 
 # Update package lists and upgrade installed packages
 sudo apt-get update
@@ -6,10 +10,8 @@ sudo apt-get upgrade -y
 
 # Install required packages
 sudo apt-get install -y python3-pyaudio flac libsdl-ttf2.0-0 python3-sdl2 libsdl2-mixer-2.0-0
-python3 -m pip install spacy
 sudo apt-get install python3-pygame
 # Download and install spaCy's English model
-python3 -m spacy download en_core_web_sm
 
 sudo pip3 install -r requirements.txt
 

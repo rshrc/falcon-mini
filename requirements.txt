@@ -5,3 +5,4 @@ pydub
 python-dotenv
 fuzzywuzzy
 python-Levenshtein
+nltk
