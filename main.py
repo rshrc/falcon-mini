@@ -15,10 +15,14 @@ from fuzzywuzzy import fuzz
 from gtts import gTTS
 from pydub import AudioSegment
 from pydub.playback import play
-from spacy.lang.en import English
+# from spacy.lang.en import English
 from mem_test import measure_memory_usage
-
+from nltk.tokenize import word_tokenize, sent_tokenize
+from nltk.tag import pos_tag
+import nltk
 from functools import wraps
+
+nltk.download('averaged_perceptron_tagger')
 
 def timing(f):
 
@@ -49,7 +53,7 @@ stop_keywords = {'stop', 'quit', 'exit', 'end'}
 
 # nlp = spacy.load("en_core_web_sm")
 
-nlp = English()
+# nlp = English()
 
 trie = None
 
@@ -132,11 +136,17 @@ def update_conversation(input, output):
 
 @measure_memory_usage
 async def process_input(recognized_text):
-    doc = nlp(recognized_text)
+    # doc = nlp(recognized_text)
+    tokens = word_tokenize(recognized_text)
+    tagged_tokens = pos_tag(tokens)
 
     # 0.00012 seconds in intent detection
-    play_intent = any(token.text.lower() in play_keywords or token.pos_ == "VERB" for token in doc)
-    stop_intent = any(token.text.lower() in stop_keywords or token.pos_ == "VERB" for token in doc)
+    # play_intent = any(token.text.lower() in play_keywords or token.pos_ == "VERB" for token in doc)
+    # stop_intent = any(token.text.lower() in stop_keywords or token.pos_ == "VERB" for token in doc)
+
+    play_intent = any(word.lower() in play_keywords or pos == "VB" for word, pos in tagged_tokens)
+    stop_intent = any(word.lower() in stop_keywords or pos == "VB" for word, pos in tagged_tokens)
+
     
     print(f"Play Intent? {play_intent}")
     print(f"Stop Intent? {stop_intent}")

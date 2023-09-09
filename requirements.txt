@@ -1,9 +1,7 @@
 SpeechRecognition
 gTTS
 PyAudio
-pygame
 pydub
 python-dotenv
-spacy
 fuzzywuzzy
 python-Levenshtein
