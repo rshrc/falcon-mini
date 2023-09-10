@@ -15,6 +15,9 @@ sudo apt-get install python3-pygame
 # Install Python Installer
 sudo apt-get install python3-pip
 
+# Writing dependencies to 
+echo -e "SpeechRecognition\ngTTS\nPyAudio\npydub\npython-dotenv\nfuzzywuzzy\npython-Levenshtein\nnltk\npsutil" > requirements.txt
+
 sudo pip3 install -r requirements.txt
 
 # Additional setup tasks (add your own commands here)
@@ -24,7 +27,7 @@ sudo pip3 install -r requirements.txt
 # sudo reboot
 
 # Append the export command to .bashrc
-echo 'export LC_ALL=C' >> ~/.bashrc
+# echo 'export LC_ALL=C' >> ~/.bashrc
 
 # Source the .bashrc file to apply the changes
-source ~/.bashrc
+# source ~/.bashrc
