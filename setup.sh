@@ -7,11 +7,13 @@ sudo sed -i -e '2,$s/^deb/#deb/' /etc/apt/sources.list
 # Update package lists and upgrade installed packages
 sudo apt-get update
 sudo apt-get upgrade -y
-
+sudo apt install git
 # Install required packages
 sudo apt-get install -y python3-pyaudio flac libsdl-ttf2.0-0 python3-sdl2 libsdl2-mixer-2.0-0
 sudo apt-get install python3-pygame
-# Download and install spaCy's English model
+
+# Install Python Installer
+sudo apt-get install python3-pip
 
 sudo pip3 install -r requirements.txt
 

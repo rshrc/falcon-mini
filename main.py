@@ -1,28 +1,29 @@
 import argparse
+import asyncio
 import json
-
-import time
 import os
 import random
-
+import time
+from functools import wraps
 from io import BytesIO
 from tempfile import TemporaryFile
-import asyncio
+
+import nltk
 import requests as r
 import speech_recognition as sr
 from dotenv import load_dotenv
 from fuzzywuzzy import fuzz
 from gtts import gTTS
+from nltk.tag import pos_tag
+from nltk.tokenize import sent_tokenize, word_tokenize
 from pydub import AudioSegment
 from pydub.playback import play
+
 # from spacy.lang.en import English
 from mem_test import measure_memory_usage
-from nltk.tokenize import word_tokenize, sent_tokenize
-from nltk.tag import pos_tag
-import nltk
-from functools import wraps
 
 nltk.download('averaged_perceptron_tagger')
+
 
 def timing(f):
 
@@ -32,8 +33,8 @@ def timing(f):
         result = f(*args, **kw)
         te = time.time()
 
-        print('func:%r args:[%r, %r] took: %2.8f sec' % \
-          (f.__name__, args, kw, te-ts))
+        print('func:%r args:[%r, %r] took: %2.8f sec' %
+              (f.__name__, args, kw, te-ts))
         return result
 
     return timed
@@ -58,7 +59,7 @@ stop_keywords = {'stop', 'quit', 'exit', 'end'}
 trie = None
 
 
-@timing # taking 0.0019 sec
+@timing  # taking 0.0019 sec
 @measure_memory_usage
 def check_similar_song(user_input: str):
     print("Using V1 Search Algorithm")
@@ -77,6 +78,7 @@ def check_similar_song(user_input: str):
     else:
         return False, None
 
+
 @timing
 @measure_memory_usage
 async def output_voicev2(text: str, expect_return=False):
@@ -90,10 +92,11 @@ async def output_voicev2(text: str, expect_return=False):
 
     return expect_return
 
+
 @timing
 @measure_memory_usage
 async def output_voice(text: str, expect_return=False):
-    
+
     tts = gTTS(text, lang='en')
 
     fp = TemporaryFile()
@@ -102,7 +105,6 @@ async def output_voice(text: str, expect_return=False):
     fp.seek(0)
     song = AudioSegment.from_file(fp, format="mp3")
     play(song)
-   
 
     return expect_return
 
@@ -134,6 +136,7 @@ def update_conversation(input, output):
     ])
     print("Conversation Updated")
 
+
 @measure_memory_usage
 async def process_input(recognized_text):
     # doc = nlp(recognized_text)
@@ -144,10 +147,11 @@ async def process_input(recognized_text):
     # play_intent = any(token.text.lower() in play_keywords or token.pos_ == "VERB" for token in doc)
     # stop_intent = any(token.text.lower() in stop_keywords or token.pos_ == "VERB" for token in doc)
 
-    play_intent = any(word.lower() in play_keywords or pos == "VB" for word, pos in tagged_tokens)
-    stop_intent = any(word.lower() in stop_keywords or pos == "VB" for word, pos in tagged_tokens)
+    play_intent = any(word.lower() in play_keywords or pos ==
+                      "VB" for word, pos in tagged_tokens)
+    stop_intent = any(word.lower() in stop_keywords or pos ==
+                      "VB" for word, pos in tagged_tokens)
 
-    
     print(f"Play Intent? {play_intent}")
     print(f"Stop Intent? {stop_intent}")
 
@@ -189,13 +193,15 @@ async def process_input(recognized_text):
 
         await output_voice(speech)
 
+
 def voice_filler():
     return random.choice(seq=['yes', 'yes tell me', 'sup', 'whats up', 'yo yo'])
+
 
 @measure_memory_usage
 async def speech_to_text():
     with sr.Microphone() as source:
-        
+
         recognizer.adjust_for_ambient_noise(source)
 
         listen = True
@@ -212,7 +218,8 @@ async def speech_to_text():
                 print(f"Recognized Text : {recognized_text}")
 
                 wake_word = fuzz.partial_ratio(recognized_text, WAKE_WORD)
-                yes_wake_word = fuzz.partial_ratio(recognized_text, f"yes google")
+                yes_wake_word = fuzz.partial_ratio(
+                    recognized_text, f"yes google")
 
                 print(f"Wake Word Spoken: {wake_word}")
 
@@ -224,24 +231,25 @@ async def speech_to_text():
 
                             print("ARE WE READY TO LISTEN")
                             print("Microphone is back Online")
-                            
+
                             print("Listeing for second command!")
                             audio = recognizer.listen(source)
 
                             print("I GUESS WE ARE")
 
-                            recognized_text = recognizer.recognize_google(audio)
+                            recognized_text = recognizer.recognize_google(
+                                audio)
 
-                            print(f"Recognized Instruction : {recognized_text}")
+                            print(
+                                f"Recognized Instruction : {recognized_text}")
 
                             await process_input(recognized_text)
-                        
-                    else :
+
+                    else:
                         command = recognized_text.lower().replace(WAKE_WORD, "").strip()
 
                         await process_input(command)
 
-                        
                 else:
                     pass
                     print(f"Keep Sleeping")
@@ -251,6 +259,7 @@ async def speech_to_text():
 
 audio_files = []
 
+
 @measure_memory_usage
 def load_audio_files():
     folder_path = "audio_files"
@@ -258,8 +267,9 @@ def load_audio_files():
     for filename in os.listdir(folder_path):
         if filename.lower().endswith('.mp3'):
             audio_files.append(os.path.join(folder_path, filename))
-    
+
     global trie  # Assuming trie is a global variable
+
 
 @measure_memory_usage
 async def main():

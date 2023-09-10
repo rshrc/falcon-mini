@@ -1,5 +1,7 @@
-import psutil
 from functools import wraps
+
+import psutil
+
 
 def measure_memory_usage(func):
     @wraps(func)
