@@ -23,6 +23,8 @@ from pydub.playback import play
 from mem_test import measure_memory_usage
 
 nltk.download('averaged_perceptron_tagger')
+nltk.download('punkt')
+
 
 
 def timing(f):
