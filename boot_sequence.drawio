@@ -1,0 +1,121 @@
+<mxfile host="65bd71144e">
+    <diagram id="QAB_8o-g73n84w2v7NiB" name="Page-1">
+        <mxGraphModel dx="676" dy="1397" grid="1" gridSize="10" guides="1" tooltips="1" connect="0" arrows="1" fold="1" page="1" pageScale="1" pageWidth="583" pageHeight="827" background="#999696" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="7" style="edgeStyle=none;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;startArrow=none;" parent="1" source="27" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="135" y="200" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="29" style="edgeStyle=none;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;fontFamily=Helvetica;curved=1;flowAnimation=1;fixDash=0;snapToPoint=0;orthogonalLoop=0;comic=1;" parent="1" source="2" target="32" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="2" value="Check Internt/WiFi connection via WPA CONF" style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Verdana;" parent="1" vertex="1">
+                    <mxGeometry x="20" y="70" width="230" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="9" style="edgeStyle=none;html=1;comic=1;flowAnimation=1;" parent="1" source="8" target="10" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="135" y="340" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="8" value="Execute setup_access_point.sh" style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Verdana;" parent="1" vertex="1">
+                    <mxGeometry x="27.5" y="200" width="215" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="21" style="edgeStyle=none;html=1;exitX=1;exitY=0.75;exitDx=0;exitDy=0;entryX=-0.011;entryY=0.333;entryDx=0;entryDy=0;entryPerimeter=0;fontFamily=Verdana;comic=1;flowAnimation=1;" parent="1" source="10" target="17" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="22" style="edgeStyle=none;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Helvetica;comic=1;flowAnimation=1;" parent="1" source="10" target="16" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="23" style="edgeStyle=none;html=1;exitX=1;exitY=0.25;exitDx=0;exitDy=0;entryX=0;entryY=1;entryDx=0;entryDy=0;fontFamily=Helvetica;comic=1;flowAnimation=1;" parent="1" source="10" target="18" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="10" value="Execute setup_localserver.sh&lt;br&gt;1. This starts the Flask Server called (localserverj3.py)&lt;br&gt;2. Service name is localserverj3 on port 5000&lt;br&gt;3. IP Of server is usally -&amp;gt; 192.168.4.1" style="rounded=1;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;spacingLeft=16;spacingRight=16;fontFamily=Verdana;" parent="1" vertex="1">
+                    <mxGeometry x="71" y="320" width="255" height="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="11" value="API END POINTS" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fontFamily=Verdana;rounded=1;" parent="1" vertex="1">
+                    <mxGeometry x="36" y="540" width="290" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="12" value="POST: set-wifi-password/ {'wifi_ssid', 'wifi_password'}" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=12;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontFamily=Verdana;spacingBottom=12;rounded=1;" parent="11" vertex="1">
+                    <mxGeometry y="30" width="290" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="13" value="GET: restart_toy/ -&amp;gt; Changes access point settings to normal" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=12;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontFamily=Verdana;spacingBottom=12;rounded=1;" parent="11" vertex="1">
+                    <mxGeometry y="100" width="290" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="16" value="/set_wifi_password&lt;br&gt;1. wifi_ssif&lt;br&gt;&lt;div style=&quot;&quot;&gt;&lt;span style=&quot;background-color: initial;&quot;&gt;2. wifi_password&lt;/span&gt;&lt;/div&gt;" style="ellipse;whiteSpace=wrap;html=1;fontFamily=Helvetica;align=left;fontStyle=0;spacingLeft=40;rounded=1;" parent="1" vertex="1">
+                    <mxGeometry x="410" y="350" width="190" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="41" style="edgeStyle=none;curved=1;comic=1;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;fontFamily=Helvetica;flowAnimation=1;" parent="1" source="17" target="39" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="660" y="410"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="17" value="&lt;br&gt;/set_details&lt;br&gt;1. age&lt;br&gt;&lt;div style=&quot;&quot;&gt;&lt;span style=&quot;background-color: initial;&quot;&gt;2. name&lt;/span&gt;&lt;/div&gt;" style="ellipse;whiteSpace=wrap;html=1;fontFamily=Verdana;align=left;spacingLeft=48;rounded=1;" parent="1" vertex="1">
+                    <mxGeometry x="380" y="460" width="160" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="24" style="edgeStyle=none;html=1;exitX=0;exitY=0;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Helvetica;curved=1;comic=1;flowAnimation=1;" parent="1" source="18" target="2" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="370" y="140"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="18" value="/restart" style="ellipse;whiteSpace=wrap;html=1;fontFamily=Verdana;rounded=1;" parent="1" vertex="1">
+                    <mxGeometry x="400" y="250" width="200" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="31" style="edgeStyle=none;curved=1;comic=1;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Helvetica;flowAnimation=1;" parent="1" source="26" target="30" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="26" value="Execute LL-MAI-PAI-Software installation script" style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Verdana;" parent="1" vertex="1">
+                    <mxGeometry x="294" y="-70" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="28" value="" style="edgeStyle=none;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;endArrow=none;" parent="1" source="2" target="27" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="135" y="200" as="targetPoint"/>
+                        <mxPoint x="135" y="130" as="sourcePoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="27" value="No" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fontFamily=Helvetica;rounded=1;" parent="1" vertex="1">
+                    <mxGeometry x="110" y="140" width="30" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="30" value="Convert falcon_mini to a service and start it&lt;br&gt;&lt;br&gt;That should display &quot;J3 Success on OLED&quot;" style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Verdana;" parent="1" vertex="1">
+                    <mxGeometry x="480" y="-50" width="170" height="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="37" style="edgeStyle=none;curved=1;comic=1;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Helvetica;flowAnimation=1;" parent="1" source="32" target="36" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="190" y="-90"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="40" style="edgeStyle=none;curved=1;comic=1;html=1;exitX=1;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Helvetica;flowAnimation=1;" parent="1" source="32" target="39" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="380" y="130"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="32" value="falcon_mini service available" style="ellipse;whiteSpace=wrap;html=1;fontFamily=Verdana;spacingLeft=16;rounded=1;" parent="1" vertex="1">
+                    <mxGeometry x="90" y="-80" width="120" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="38" style="edgeStyle=none;curved=1;comic=1;html=1;exitX=1;exitY=0;exitDx=0;exitDy=0;entryX=0.584;entryY=-0.001;entryDx=0;entryDy=0;entryPerimeter=0;fontFamily=Helvetica;flowAnimation=1;" parent="1" source="36" target="26" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="320" y="-124"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="36" value="No" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fontFamily=Verdana;rounded=1;" parent="1" vertex="1">
+                    <mxGeometry x="210" y="-130" width="40" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="39" value="&lt;font face=&quot;Helvetica&quot;&gt;Start falcon_mini service once again with daemon reload&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Verdana;" parent="1" vertex="1">
+                    <mxGeometry x="580" y="160" width="120" height="60" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

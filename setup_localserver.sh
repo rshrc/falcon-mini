@@ -7,7 +7,7 @@ APP_DIR=$(pwd)
 mkdir -p $APP_DIR
 
 # Write the Flask app to a file
-cat <<EOL > $APP_DIR/main.py
+cat <<EOL > $APP_DIR/localserver.py
 from flask import Flask, request
 
 app = Flask(__name__)
@@ -43,7 +43,7 @@ After=network.target
 [Service]
 User=rishi
 WorkingDirectory=$APP_DIR
-ExecStart=/usr/local/bin/gunicorn -b 0.0.0.0:5000 main:app
+ExecStart=/usr/local/bin/gunicorn -b 0.0.0.0:5000 localserver:app
 Restart=on-failure
 Type=simple
 
@@ -52,8 +52,8 @@ WantedBy=multi-user.target
 EOL
 
 # Enable and start the service
-sudo systemctl enable flask_app
-sudo systemctl start flask_app
+sudo systemctl enable localserverj3
+sudo systemctl start localserverj3
 
 # Check the status of the service
-sudo systemctl status flask_app
+sudo systemctl status localserverj3
