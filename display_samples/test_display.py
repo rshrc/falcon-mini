@@ -41,8 +41,14 @@ def add_newlines(sentence, max_line_length=16):
     return '\n'.join(lines)
 
 
+def display(input):
+    with canvas(device) as draw:
+        draw.rectangle(device.bounding_box, outline="white", fill="black")
+        draw.text((4, 4), add_newlines(input), fill="white")
+    # sleep(3)
+
 # Box and text rendered in portrait mode
-while True:
+while False:
     with canvas(device) as draw:
         draw.rectangle(device.bounding_box, outline="white", fill="black")
         draw.text((4, 4), add_newlines(random.choice(random_sentences)), fill="white")

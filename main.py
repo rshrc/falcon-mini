@@ -7,6 +7,7 @@ import time
 from functools import wraps
 from io import BytesIO
 from tempfile import TemporaryFile
+from display_samples.test_display import display
 
 import nltk
 import requests as r
@@ -14,22 +15,16 @@ import speech_recognition as sr
 from dotenv import load_dotenv
 from fuzzywuzzy import fuzz
 from gtts import gTTS
+
 from nltk.tag import pos_tag
 from nltk.tokenize import sent_tokenize, word_tokenize
 from pydub import AudioSegment
 from pydub.playback import play
 
-# from spacy.lang.en import English
 from mem_test import measure_memory_usage
-
-
-nltk.data.path.append("./nltk_data")
-
 
 # nltk.download('averaged_perceptron_tagger')
 # nltk.download('punkt')
-
-
 
 def timing(f):
 
@@ -146,17 +141,22 @@ def update_conversation(input, output):
 @measure_memory_usage
 async def process_input(recognized_text):
     # doc = nlp(recognized_text)
-    tokens = word_tokenize(recognized_text)
-    tagged_tokens = pos_tag(tokens)
+    try:
+        tokens = word_tokenize(recognized_text)
+        tagged_tokens = pos_tag(tokens)
 
-    # 0.00012 seconds in intent detection
-    # play_intent = any(token.text.lower() in play_keywords or token.pos_ == "VERB" for token in doc)
-    # stop_intent = any(token.text.lower() in stop_keywords or token.pos_ == "VERB" for token in doc)
+        # 0.00012 seconds in intent detection
+        # play_intent = any(token.text.lower() in play_keywords or token.pos_ == "VERB" for token in doc)
+        # stop_intent = any(token.text.lower() in stop_keywords or token.pos_ == "VERB" for token in doc)
 
-    play_intent = any(word.lower() in play_keywords or pos ==
-                      "VB" for word, pos in tagged_tokens)
-    stop_intent = any(word.lower() in stop_keywords or pos ==
-                      "VB" for word, pos in tagged_tokens)
+        play_intent = any(word.lower() in play_keywords or pos ==
+                        "VB" for word, pos in tagged_tokens)
+        stop_intent = any(word.lower() in stop_keywords or pos ==
+                        "VB" for word, pos in tagged_tokens)
+
+    except Exception as e:
+        play_intent = False
+        stop_intent = False
 
     print(f"Play Intent? {play_intent}")
     print(f"Stop Intent? {stop_intent}")
@@ -196,7 +196,7 @@ async def process_input(recognized_text):
         update_conversation(recognized_text, speech)
 
         print(f"Response : {conversation}")
-
+        display(speech)
         await output_voice(speech)
 
 
