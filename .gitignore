@@ -5,6 +5,7 @@ __pycache__/
 audio_files0/
 # C extensions
 *.so
+nltk_data/
 
 # Distribution / packaging
 .Python

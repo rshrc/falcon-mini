@@ -22,8 +22,12 @@ from pydub.playback import play
 # from spacy.lang.en import English
 from mem_test import measure_memory_usage
 
-nltk.download('averaged_perceptron_tagger')
-nltk.download('punkt')
+
+nltk.data.path.append("./nltk_data")
+
+
+# nltk.download('averaged_perceptron_tagger')
+# nltk.download('punkt')
 
 
 
