@@ -186,7 +186,7 @@ async def process_input(recognized_text):
         if len(conversation) > 0:
             data['conversation'] = json.dumps(conversation[:MEMORY_CONTEXT])
 
-        print(f"Line 126 {data}")
+        print(f"POST DATA {data}")
 
         response = r.post(API_URL, json=data)
 

@@ -20,6 +20,13 @@ echo -e "SpeechRecognition\ngTTS\nPyAudio\npydub\npython-dotenv\nfuzzywuzzy\npyt
 
 sudo pip3 install -r requirements.txt
 
+# Setup NLP
+# Unzip file1.zip and rename to nlp1
+unzip nlp/nlp1.zip -d temp_folder && mv temp_folder/* nltk_data/ && rm -r temp_folder
+
+# Unzip file2.zip and rename to nlp2
+unzip nlp/nlp2.zip -d temp_folder && mv temp_folder/* nltk_data/ && rm -r temp_folder
+
 # Additional setup tasks (add your own commands here)
 # Example: Enable SSH, configure Wi-Fi, etc.
 
