@@ -7,6 +7,9 @@ from luma.core.render import canvas
 from luma.oled.device import ssd1306, ssd1325, ssd1331, sh1106
 from time import sleep
 import random
+import argparse
+import threading
+
 
 serial = i2c(port=1, address=0x3C)
 device = sh1106(serial, rotate=0)
@@ -41,11 +44,11 @@ def add_newlines(sentence, max_line_length=16):
     return '\n'.join(lines)
 
 
-def display(input):
+def display(input, duration=3):
     with canvas(device) as draw:
         draw.rectangle(device.bounding_box, outline="white", fill="black")
         draw.text((4, 4), add_newlines(input), fill="white")
-    # sleep(3)
+    sleep(duration)
 
 # Box and text rendered in portrait mode
 while False:
@@ -54,5 +57,24 @@ while False:
         draw.text((4, 4), add_newlines(random.choice(random_sentences)), fill="white")
     sleep(3)
 
+def main(message, **kwargs):
+    # Your code here
+    # display(message)
+    display_thread = threading.Thread(target=display, args=(message, kwargs['duration']))
+    display_thread.start()
 
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Description of your script.')
+
+    parser.add_argument('input', type=str, help='Display Text for OLED')
+    parser.add_argument('time', type=int,  help='Duration for Text Display')
+
+
+
+    args = parser.parse_args()
+
+
+    main(args.input, duration=args.time)
 
