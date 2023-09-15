@@ -7,7 +7,7 @@ import time
 from functools import wraps
 from io import BytesIO
 from tempfile import TemporaryFile
-from display_samples.test_display import display
+from display.utils import display
 
 import nltk
 import requests as r
