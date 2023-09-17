@@ -13,14 +13,16 @@ def set_wifi_credentials():
         wifi_password = request.json.get('password')
         network_block = """
             network={
-                ssid="Your_SSID"
-                psk="Your_PSK_Password"
+                ssid=wifi_ssid
+                psk=wifi_psk
                 key_mgmt=WPA-PSK
             }
         """
+        network_block = network_block.replace("wifi_ssid", wifi_ssid).replace("wifi_psk", wifi_password)
+
         # with open('/etc/wpa_supplicant/wpa_supplicant.conf', 'a') as file:
-        network_block = network_block.replace("Your_SSID", wifi_ssid).replace("Your_PSK_Password", wifi_password)
-        os.system(f'sudo echo {network_block} >> /etc/wpa_supplicant/wpa_supplicant.conf')
+        # network_block = network_block.replace("Your_SSID", wifi_ssid).replace("Your_PSK_Password", wifi_password)
+        os.system(f"sudo echo '{network_block}' >> /etc/wpa_supplicant/wpa_supplicant.conf")
         print("J3 Server Online")
         return f'Credentials updated successfully with {wifi_ssid} and {wifi_password}', 200
 
