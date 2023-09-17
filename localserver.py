@@ -10,7 +10,7 @@ def set_wifi_credentials():
         wifi_ssid = request.json.get('ssid')
         wifi_password = request.json.get('password')
         # with open('/etc/wpa_supplicant/wpa_supplicant.conf', 'a') as file:
-        data = '\\n\\nnetwork={{\\n    ssid="{wifi_ssid}"\\n    psk="{wifi_password}"\\n    key_mgmt=WPA-PSK\\n}}\\n'
+        data = '\n\nnetwork={{\n    ssid="{wifi_ssid}"\n    psk="{wifi_password}"\n    key_mgmt=WPA-PSK\n}}\n'
         os.system(f'sudo echo {data} >> /etc/wpa_supplicant/wpa_supplicant.conf')
         print("J3 Server Online")
         return f'Credentials updated successfully with {wifi_ssid} and {wifi_password}', 200
@@ -22,7 +22,7 @@ def set_wifi_credentials():
 def ping_connection():
     return f"Product is Online", 200
 
-@app.route('/api/restart', method=['GET'])
+@app.route('/api/restart', methods=['GET'])
 def restart():
     os.system("sudo ~/LL-MAI-PI-SOFTWARE/scrap_access_point.sh")
     return "Restarted System", 200
