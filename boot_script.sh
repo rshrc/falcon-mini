@@ -34,6 +34,7 @@ if check_network_blocks; then
         # start falcon mini service
     else
         echo "Turning Off Access Point Mode"
+        return
         # Stop Services
         sudo systemctl stop hostapd
         sudo systemctl stop dnsmasq
@@ -70,6 +71,7 @@ else
     # Code block to run when there is no internet
     echo "Internet is not available. Turning on Access Point"
     # Add your code here
+    return
     sudo apt install hostapd dnsmasq -y
 
     # Stop Services
