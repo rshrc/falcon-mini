@@ -4,19 +4,20 @@ import os
 from regex import R
 app = Flask(__name__)
 
-network_block = """
-network={
-    ssid="Your_SSID"
-    psk="Your_PSK_Password"
-    key_mgmt=WPA-PSK
-}
-"""
+
 
 @app.route('/api/set-wifi-credentials', methods=['POST'])
 def set_wifi_credentials():
     try:
         wifi_ssid = request.json.get('ssid')
         wifi_password = request.json.get('password')
+        network_block = """
+            network={
+                ssid="Your_SSID"
+                psk="Your_PSK_Password"
+                key_mgmt=WPA-PSK
+            }
+        """
         # with open('/etc/wpa_supplicant/wpa_supplicant.conf', 'a') as file:
         network_block = network_block.replace("Your_SSID", wifi_ssid).replace("Your_PSK_Password", wifi_password)
         os.system(f'sudo echo {network_block} >> /etc/wpa_supplicant/wpa_supplicant.conf')
