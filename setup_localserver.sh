@@ -17,8 +17,8 @@ def set_wifi_credentials():
     try:
         wifi_ssid = request.json.get('ssid')
         wifi_password = request.json.get('password')
-        # with open('/etc/wpa_supplicant/wpa_supplicant.conf', 'a') as file:
-        #     file.write(f'\\n\\nnetwork={{\\n    ssid="{wifi_ssid}"\\n    psk="{wifi_password}"\\n    key_mgmt=WPA-PSK\\n}}\\n')
+        with open('/etc/wpa_supplicant/wpa_supplicant.conf', 'a') as file:
+            file.write(f'\\n\\nnetwork={{\\n    ssid="{wifi_ssid}"\\n    psk="{wifi_password}"\\n    key_mgmt=WPA-PSK\\n}}\\n')
         print("J3 Server Online")
         return 'Credentials updated successfully', 200
 
@@ -35,7 +35,7 @@ sudo pip3 install gunicorn
 chmod +x main.py
 
 # Create the systemd service file
-cat <<EOL | sudo tee /etc/systemd/system/flask_app.service
+cat <<EOL | sudo tee /etc/systemd/system/localserverj3.service
 [Unit]
 Description=Flask App Service
 After=network.target

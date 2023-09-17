@@ -10,7 +10,7 @@
 sudo apt install git
 # Install required packages
 sudo apt-get install -y python3-pyaudio flac libsdl-ttf2.0-0 python3-sdl2 libsdl2-mixer-2.0-0 ffmpeg
-sudo apt-get install python3-pygame
+sudo apt-get install python3-pygame ffmpeg
 
 # Install Python Installer
 sudo apt-get install python3-pip
