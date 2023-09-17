@@ -18,7 +18,7 @@ def set_wifi_credentials():
                 key_mgmt=WPA-PSK
             }
         """
-        network_block = network_block.replace("wifi_ssid", wifi_ssid).replace("wifi_psk", wifi_password).strip()
+        network_block = network_block.replace("wifi_ssid", f"\"{wifi_ssid}\"").replace("wifi_psk", f"\"{wifi_password}\"").strip()
 
         # with open('/etc/wpa_supplicant/wpa_supplicant.conf', 'a') as file:
         # network_block = network_block.replace("Your_SSID", wifi_ssid).replace("Your_PSK_Password", wifi_password)
