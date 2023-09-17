@@ -1,5 +1,7 @@
 from flask import Flask, request
 import os
+
+from regex import R
 app = Flask(__name__)
 
 @app.route('/api/set-wifi-credentials', methods=['POST'])
@@ -15,6 +17,15 @@ def set_wifi_credentials():
 
     except Exception as e:
         return str(e), 500
+
+@app.route('/api/ping', methods=['GET'])
+def ping_connection():
+    return f"Product is Online", 200
+
+@app.route('/api/restart', method=['GET'])
+def restart():
+    os.system("sudo ~/LL-MAI-PI-SOFTWARE/scrap_access_point.sh")
+    return "Restarted System", 200
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
