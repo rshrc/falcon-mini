@@ -64,8 +64,9 @@ if check_network_blocks; then
 
         # Reboot
         sudo reboot
+    fi
     # Start Falcon Mini Service
-else if check_access_point; then
+elif check_access_point; then
     echo "Device running in Access Point Mode, User Needs to Share WiFi Credentials"
 else
     # Code block to run when there is no internet
