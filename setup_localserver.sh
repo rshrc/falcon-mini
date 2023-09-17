@@ -43,7 +43,7 @@ After=network.target
 [Service]
 User=rishi
 WorkingDirectory=$APP_DIR
-ExecStart=sudo /usr/local/bin/gunicorn -b 0.0.0.0:5000 localserver:app
+ExecStart=/usr/local/bin/gunicorn -b 0.0.0.0:5000 localserver:app
 Restart=on-failure
 Type=simple
 
