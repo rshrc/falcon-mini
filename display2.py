@@ -1,36 +1,56 @@
-import time
-import busio
 import digitalio
-from board import SCK, MOSI, MISO, D2, D3, D24, D22
+import board
+from PIL import Image, ImageDraw, ImageFont
+from adafruit_rgb_display import ili9341
 
-from adafruit_rgb_display import color565
-import adafruit_rgb_display.ili9341 as ili9341
+BORDER = 20
+FONTSIZE = 24
 
+BAUDRATE = 24000000
+cs_pin = digitalio.DigitalInOut(board.CE0)
+dc_pin = digitalio.DigitalInOut(board.D25)
+reset_pin = digitalio.DigitalInOut(board.D24)
+spi = board.SPI()
 
-# Configuration for CS and DC pins:
-CS_PIN = D24
-DC_PIN = D22
+disp = ili9341.ILI9341(
+    spi,
+    rotation=90,  # 2.2", 2.4", 2.8", 3.2" ILI9341
+    cs=cs_pin,
+    dc=dc_pin,
+    rst=reset_pin,
+    baudrate=BAUDRATE,
+)
 
-# Setup SPI bus using hardware SPI:
-spi = busio.SPI(clock=SCK, MOSI=MOSI, MISO=MISO)
+if disp.rotation % 180 == 90:
+    height = disp.width  # we swap height/width to rotate it to landscape!
+    width = disp.height
+else:
+    width = disp.width  # we swap height/width to rotate it to landscape!
+    height = disp.height
 
-# Create the ILI9341 display:
-display = ili9341.ILI9341(spi, cs=digitalio.DigitalInOut(CS_PIN),
-                          dc=digitalio.DigitalInOut(DC_PIN))
+image = Image.new("RGB", (width, height))
 
-def display_text():
-    # Main loop:
-    while True:
-        # Clear the display
-        display.fill(0)
-        # Draw a red pixel in the center.
-        display.pixel(120, 160, color565(255, 0, 0))
-        # Pause 2 seconds.
-        # time.sleep(2)
-        # Clear the screen blue.
-        display.fill(color565(0, 0, 255))
-        # Pause 2 seconds.
-        time.sleep(2)
+# Get drawing object to draw on image.
+draw = ImageDraw.Draw(image)
 
-if __name__ == "__main__":
-    display_text()
+# Draw a green filled box as the background
+draw.rectangle((0, 0, width, height), fill=(0, 255, 0))
+disp.image(image)
+
+# Draw a smaller inner purple rectangle
+draw.rectangle(
+    (BORDER, BORDER, width - BORDER - 1, height - BORDER - 1), fill=(170, 0, 136)
+)
+
+font = ImageFont.truetype("./DejaVuSans.ttf", FONTSIZE)
+
+text = "Hello World!"
+(x, y, font_width, font_height) = font.getbbox(text)
+draw.text(
+    (width // 2 - font_width // 2, height // 2 - font_height // 2),
+    text,
+    fill=(255, 255, 0),
+)
+
+# Display image.
+disp.image(image)
