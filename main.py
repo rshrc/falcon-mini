@@ -8,7 +8,7 @@ from functools import wraps
 from io import BytesIO
 from tempfile import TemporaryFile
 # from display.utils import display
-
+from oled.lib import DisplayController
 import nltk
 import requests as r
 import speech_recognition as sr
@@ -60,6 +60,10 @@ stop_keywords = {'stop', 'quit', 'exit', 'end'}
 # nlp = English()
 
 trie = None
+
+# Example Usage:
+dpc = DisplayController()
+
 
 
 @timing  # taking 0.0019 sec
@@ -198,7 +202,7 @@ async def process_input(recognized_text):
         update_conversation(recognized_text, speech)
 
         print(f"Response : {conversation}")
-        # display(speech)
+        dpc.render_text(speech)
         await output_voice(speech)
 
 
@@ -216,7 +220,7 @@ async def speech_to_text():
 
         if listen:
             print("Listening for Wake Word")
-
+            dpc.render_text("Listening for wake word")
             audio = recognizer.listen(source)
 
             print("There was some audio input!")
