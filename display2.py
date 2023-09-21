@@ -39,26 +39,43 @@ draw = ImageDraw.Draw(image)
 draw.rectangle((0, 0, width, height), fill=FOREFROUND_FONT_COLOR)
 disp.image(image)
 
-# Draw a smaller inner purple rectangle
-# draw.rectangle(
-#     (BORDER, BORDER, width - BORDER - 1, height - BORDER - 1), fill=(170, 0, 136)
-# )
-
 font = ImageFont.load_default()
 
-text = "A quick brown fox jumped over"
+text = "A quick brown fox jumped over on a lazy sunday ofcourse."
 (x, y, font_width, font_height) = font.getbbox(text)
 
-draw.text(
-    (width // 2 - font_width // 2, height // 2 - font_height // 2),
-    text,
-    fill=(255, 255, 0),
-)
+x_pos = width - font_width - BORDER  # Align to top-right corner
+y_pos = BORDER
 
-print(f"Line 58 : {font.getlength(text)}")
+# Function to draw multiline text
+def draw_text(draw, text, position, font, fill):
+    lines = text.split("\n")
+    print(f"Line 53 {position}")
+    y = position[1]
+    for line in lines:
+        draw.text((position[1], y), line, font=font, fill=fill)
+        y += font.getbbox(line)[1]
 
-# y += font.getlength(text)[1]
-# print("Line 52 : ${52}")
-
-# Display image.
+# Clear the screen
+draw.rectangle((0, 0, width, height), fill=FOREFROUND_FONT_COLOR)
 disp.image(image)
+
+# Draw text
+draw_text(draw, text, (x_pos, y_pos), font, fill=(255, 255, 255))
+
+# Display the image
+disp.image(image)
+
+# draw.text(
+#     (width // 2 - font_width // 2, height // 2 - font_height // 2),
+#     text,
+#     fill=(255, 255, 255),
+# )
+
+# print(f"Line 58 : {font.getlength(text)}")
+
+# # y += font.getlength(text)[1]
+# # print("Line 52 : ${52}")
+
+# # Display image.
+# disp.image(image)
