@@ -2,6 +2,7 @@ import digitalio
 import board
 from PIL import Image, ImageDraw, ImageFont
 from adafruit_rgb_display import ili9341
+import threading
 
 class DisplayController:
     def __init__(self):
@@ -66,6 +67,14 @@ class DisplayController:
     def display_image(self):
         self.disp.image(self.image)
 
-# Example Usage:
+# # Example Usage:
 # controller = DisplayController()
-# controller.render_text("Ramkrishna Paramahamsa Ki Jai!")
+
+# def display_thread(text):
+#     controller.render_text(text)
+
+# display_thread = threading.Thread(target=display_thread)
+
+# # Running Display Parallelly
+# display_thread.start()
+

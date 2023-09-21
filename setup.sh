@@ -22,10 +22,10 @@ sudo pip3 install -r requirements.txt
 
 # Setup NLP
 # Unzip file1.zip and rename to nlp1
-unzip nlp/nlp1.zip -d temp_folder && mv temp_folder/* nltk_data/ && rm -r temp_folder
+unzip nlp/punkt.zip -d temp_folder && mv temp_folder/* /home/rishi/nltk_data/tokenizers/ && rm -r temp_folder
 
 # Unzip file2.zip and rename to nlp2
-unzip nlp/nlp2.zip -d temp_folder && mv temp_folder/* nltk_data/ && rm -r temp_folder
+unzip nlp/averaged_perceptron_tagger.zip -d temp_folder && mv temp_folder/* /home/rishi/taggers/ && rm -r temp_folder
 
 # Additional setup tasks (add your own commands here)
 # Example: Enable SSH, configure Wi-Fi, etc.

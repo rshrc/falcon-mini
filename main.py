@@ -7,7 +7,6 @@ import time
 from functools import wraps
 from io import BytesIO
 from tempfile import TemporaryFile
-# from display.utils import display
 from oled.lib import DisplayController
 import nltk
 import requests as r
@@ -20,13 +19,10 @@ from nltk.tag import pos_tag
 from nltk.tokenize import sent_tokenize, word_tokenize
 from pydub import AudioSegment
 from pydub.playback import play
-
 from mem_test import measure_memory_usage
 
 
 os.environ['ALSA_WARNINGS'] = '0'
-# nltk.download('averaged_perceptron_tagger')
-# nltk.download('punkt')
 
 def timing(f):
 
@@ -63,8 +59,6 @@ trie = None
 
 # Example Usage:
 dpc = DisplayController()
-
-
 
 @timing  # taking 0.0019 sec
 @measure_memory_usage
@@ -147,14 +141,10 @@ def update_conversation(input, output):
 @measure_memory_usage
 async def process_input(recognized_text):
     # doc = nlp(recognized_text)
+    dpc.render_text("Let me think....")
     try:
         tokens = word_tokenize(recognized_text)
         tagged_tokens = pos_tag(tokens)
-
-        # 0.00012 seconds in intent detection
-        # play_intent = any(token.text.lower() in play_keywords or token.pos_ == "VERB" for token in doc)
-        # stop_intent = any(token.text.lower() in stop_keywords or token.pos_ == "VERB" for token in doc)
-
         play_intent = any(word.lower() in play_keywords or pos ==
                         "VB" for word, pos in tagged_tokens)
         stop_intent = any(word.lower() in stop_keywords or pos ==
@@ -163,6 +153,8 @@ async def process_input(recognized_text):
     except Exception as e:
         play_intent = False
         stop_intent = False
+        print(f"HMMM!!!!! What the fuck! {e}")
+        return
 
     print(f"Play Intent? {play_intent}")
     print(f"Stop Intent? {stop_intent}")
@@ -212,6 +204,7 @@ def voice_filler():
 
 @measure_memory_usage
 async def speech_to_text():
+
     with sr.Microphone() as source:
 
         recognizer.adjust_for_ambient_noise(source)
@@ -222,7 +215,7 @@ async def speech_to_text():
             print("Listening for Wake Word")
             dpc.render_text("Listening for wake word")
             audio = recognizer.listen(source)
-
+            dpc.render_text("Hmmmmmm.....")
             print("There was some audio input!")
 
             try:
@@ -231,23 +224,20 @@ async def speech_to_text():
 
                 wake_word = fuzz.partial_ratio(recognized_text, WAKE_WORD)
                 yes_wake_word = fuzz.partial_ratio(
-                    recognized_text, f"yes google")
+                    recognized_text, f"hey panda")
 
                 print(f"Wake Word Spoken: {wake_word}")
 
                 if wake_word > 70:
                     if recognized_text.lower().startswith(WAKE_WORD) and len(recognized_text) == len(WAKE_WORD):
                         while True:
-                            # TODO: Trigger LED LIGHT
-                            # response = await output_voice(voice_filler(), expect_return=True)
-
-                            print("ARE WE READY TO LISTEN")
-                            print("Microphone is back Online")
+                            print("Preparing for Audio I/O")
 
                             print("Listeing for second command!")
+                            dpc.render_text(voice_filler())
                             audio = recognizer.listen(source)
-
-                            print("I GUESS WE ARE")
+                            dpc.render_text("Ummm...")
+                            print("Resuming Conversation")
 
                             recognized_text = recognizer.recognize_google(
                                 audio)
