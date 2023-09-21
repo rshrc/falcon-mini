@@ -7,7 +7,7 @@ import time
 from functools import wraps
 from io import BytesIO
 from tempfile import TemporaryFile
-from display.utils import display
+# from display.utils import display
 
 import nltk
 import requests as r
@@ -23,6 +23,8 @@ from pydub.playback import play
 
 from mem_test import measure_memory_usage
 
+
+os.environ['ALSA_WARNINGS'] = '0'
 # nltk.download('averaged_perceptron_tagger')
 # nltk.download('punkt')
 
@@ -196,7 +198,7 @@ async def process_input(recognized_text):
         update_conversation(recognized_text, speech)
 
         print(f"Response : {conversation}")
-        display(speech)
+        # display(speech)
         await output_voice(speech)
 
 
