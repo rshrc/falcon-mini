@@ -51,14 +51,8 @@ MEMORY_CONTEXT = 5
 play_keywords = {'play', 'song', 'rhyme'}
 stop_keywords = {'stop', 'quit', 'exit', 'end'}
 
-# nlp = spacy.load("en_core_web_sm")
-
-# nlp = English()
-
-trie = None
-
 # Example Usage:
-dpc = DisplayController()
+display_controller = DisplayController()
 
 @timing  # taking 0.0019 sec
 @measure_memory_usage
@@ -84,12 +78,25 @@ def check_similar_song(user_input: str):
 @measure_memory_usage
 async def output_voicev2(text: str, expect_return=False):
     tts = gTTS(text, lang='en')
-    fp = BytesIO()
+    # fp = BytesIO()
 
-    tts.write_to_fp(fp)
-    fp.seek(0)
-    song = AudioSegment.from_file(fp, format="mp3")
-    play(song)
+    # tts.write_to_fp(fp)
+    # fp.seek(0)
+    # song = AudioSegment.from_file(fp, format="mp3")
+    # play(song)
+
+    try:
+
+        audio_data = tts.get_audio_data()
+
+        play(AudioSegment(
+            audio_data,
+            frame_rate=tts.FRAME_RATE,
+            sample_width=tts.sample_width,
+            channels=1
+        ))
+    except Exception as e:
+        print(f"Line 99 : {e}")
 
     return expect_return
 
@@ -141,7 +148,7 @@ def update_conversation(input, output):
 @measure_memory_usage
 async def process_input(recognized_text):
     # doc = nlp(recognized_text)
-    dpc.render_text("Let me think....")
+    display_controller.render_text("Let me think....")
     try:
         tokens = word_tokenize(recognized_text)
         tagged_tokens = pos_tag(tokens)
@@ -153,8 +160,6 @@ async def process_input(recognized_text):
     except Exception as e:
         play_intent = False
         stop_intent = False
-        print(f"HMMM!!!!! What the fuck! {e}")
-        return
 
     print(f"Play Intent? {play_intent}")
     print(f"Stop Intent? {stop_intent}")
@@ -194,7 +199,7 @@ async def process_input(recognized_text):
         update_conversation(recognized_text, speech)
 
         print(f"Response : {conversation}")
-        dpc.render_text(speech)
+        display_controller.render_text(speech)
         await output_voice(speech)
 
 
@@ -207,15 +212,15 @@ async def speech_to_text():
 
     with sr.Microphone() as source:
 
-        recognizer.adjust_for_ambient_noise(source)
+        recognizer.adjust_for_ambient_noise(source, duration=1)
 
         listen = True
 
         if listen:
             print("Listening for Wake Word")
-            dpc.render_text("Listening for wake word")
+            display_controller.render_text("Listening for wake word")
             audio = recognizer.listen(source)
-            dpc.render_text("Hmmmmmm.....")
+            display_controller.render_text("Hmmmmmm.....")
             print("There was some audio input!")
 
             try:
@@ -234,9 +239,9 @@ async def speech_to_text():
                             print("Preparing for Audio I/O")
 
                             print("Listeing for second command!")
-                            dpc.render_text(voice_filler())
+                            display_controller.render_text(voice_filler())
                             audio = recognizer.listen(source)
-                            dpc.render_text("Ummm...")
+                            display_controller.render_text("Ummm...")
                             print("Resuming Conversation")
 
                             recognized_text = recognizer.recognize_google(
@@ -269,9 +274,6 @@ def load_audio_files():
     for filename in os.listdir(folder_path):
         if filename.lower().endswith('.mp3'):
             audio_files.append(os.path.join(folder_path, filename))
-
-    global trie  # Assuming trie is a global variable
-
 
 @measure_memory_usage
 async def main():

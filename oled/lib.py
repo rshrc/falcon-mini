@@ -4,6 +4,8 @@ from PIL import Image, ImageDraw, ImageFont
 from adafruit_rgb_display import ili9341
 import threading
 
+FONT_PATH = './DejaVuSans.ttf'
+
 class DisplayController:
     def __init__(self):
         self.BORDER = 10
@@ -12,7 +14,7 @@ class DisplayController:
         self.rotation = 90  # Modify this if needed
         self.initialize_display()
         self.initialize_image()
-        self.font = ImageFont.load_default()
+        self.font = ImageFont.truetype(FONT_PATH, size=18)
 
 
     def initialize_display(self):
@@ -52,13 +54,34 @@ class DisplayController:
         self.clear_screen()
         self.draw_text(text, (x_pos, y_pos), (255, 255, 255))
         self.display_image()
+    
+    def add_newlines(self, text):
+        lines = []
+        while text:
+            if len(text) <= 25:
+                lines.append(text)
+                break
+            else:
+                # Find the last space within the first 25 characters
+                last_space = text[:25].rfind(' ')
+                if last_space == -1:
+                    # If no space is found, split at exactly 25 characters
+                    lines.append(text[:25])
+                    text = text[25:]
+                else:
+                    # Split at the last space within the first 25 characters
+                    lines.append(text[:last_space])
+                    text = text[last_space+1:]
+        return '\n'.join(lines)
 
     def draw_text(self, text, position, fill):
-        lines = text.split("\n")
+        # print(f"Line 78 {self.add_newlines(text)}")
+        lines = self.add_newlines(text).split("\n")
         y = position[1]
         for line in lines:
             self.draw.text((position[0], y), line, font=self.font, fill=fill)
-            y += self.font.getbbox(line)[1]
+            # y += self.font.getbbox(line)[1]
+            y = y+20
 
     def clear_screen(self):
         self.draw.rectangle((0, 0, self.width, self.height), fill=self.FOREGROUND_FONT_COLOR)
