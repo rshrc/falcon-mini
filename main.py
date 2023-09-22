@@ -7,8 +7,7 @@ import time
 from functools import wraps
 from io import BytesIO
 from tempfile import TemporaryFile
-# from display.utils import display
-
+from oled.lib import DisplayController
 import nltk
 import requests as r
 import speech_recognition as sr
@@ -20,13 +19,10 @@ from nltk.tag import pos_tag
 from nltk.tokenize import sent_tokenize, word_tokenize
 from pydub import AudioSegment
 from pydub.playback import play
-
 from mem_test import measure_memory_usage
 
 
 os.environ['ALSA_WARNINGS'] = '0'
-# nltk.download('averaged_perceptron_tagger')
-# nltk.download('punkt')
 
 def timing(f):
 
@@ -55,12 +51,8 @@ MEMORY_CONTEXT = 5
 play_keywords = {'play', 'song', 'rhyme'}
 stop_keywords = {'stop', 'quit', 'exit', 'end'}
 
-# nlp = spacy.load("en_core_web_sm")
-
-# nlp = English()
-
-trie = None
-
+# Example Usage:
+display_controller = DisplayController()
 
 @timing  # taking 0.0019 sec
 @measure_memory_usage
@@ -86,12 +78,25 @@ def check_similar_song(user_input: str):
 @measure_memory_usage
 async def output_voicev2(text: str, expect_return=False):
     tts = gTTS(text, lang='en')
-    fp = BytesIO()
+    # fp = BytesIO()
 
-    tts.write_to_fp(fp)
-    fp.seek(0)
-    song = AudioSegment.from_file(fp, format="mp3")
-    play(song)
+    # tts.write_to_fp(fp)
+    # fp.seek(0)
+    # song = AudioSegment.from_file(fp, format="mp3")
+    # play(song)
+
+    try:
+
+        audio_data = tts.get_audio_data()
+
+        play(AudioSegment(
+            audio_data,
+            frame_rate=tts.FRAME_RATE,
+            sample_width=tts.sample_width,
+            channels=1
+        ))
+    except Exception as e:
+        print(f"Line 99 : {e}")
 
     return expect_return
 
@@ -143,14 +148,10 @@ def update_conversation(input, output):
 @measure_memory_usage
 async def process_input(recognized_text):
     # doc = nlp(recognized_text)
+    display_controller.render_text("Let me think....")
     try:
         tokens = word_tokenize(recognized_text)
         tagged_tokens = pos_tag(tokens)
-
-        # 0.00012 seconds in intent detection
-        # play_intent = any(token.text.lower() in play_keywords or token.pos_ == "VERB" for token in doc)
-        # stop_intent = any(token.text.lower() in stop_keywords or token.pos_ == "VERB" for token in doc)
-
         play_intent = any(word.lower() in play_keywords or pos ==
                         "VB" for word, pos in tagged_tokens)
         stop_intent = any(word.lower() in stop_keywords or pos ==
@@ -198,7 +199,7 @@ async def process_input(recognized_text):
         update_conversation(recognized_text, speech)
 
         print(f"Response : {conversation}")
-        # display(speech)
+        display_controller.render_text(speech)
         await output_voice(speech)
 
 
@@ -208,17 +209,18 @@ def voice_filler():
 
 @measure_memory_usage
 async def speech_to_text():
+
     with sr.Microphone() as source:
 
-        recognizer.adjust_for_ambient_noise(source)
+        recognizer.adjust_for_ambient_noise(source, duration=1)
 
         listen = True
 
         if listen:
             print("Listening for Wake Word")
-
+            display_controller.render_text("Listening for wake word")
             audio = recognizer.listen(source)
-
+            display_controller.render_text("Hmmmmmm.....")
             print("There was some audio input!")
 
             try:
@@ -227,23 +229,20 @@ async def speech_to_text():
 
                 wake_word = fuzz.partial_ratio(recognized_text, WAKE_WORD)
                 yes_wake_word = fuzz.partial_ratio(
-                    recognized_text, f"yes google")
+                    recognized_text, f"hey panda")
 
                 print(f"Wake Word Spoken: {wake_word}")
 
                 if wake_word > 70:
                     if recognized_text.lower().startswith(WAKE_WORD) and len(recognized_text) == len(WAKE_WORD):
                         while True:
-                            # TODO: Trigger LED LIGHT
-                            # response = await output_voice(voice_filler(), expect_return=True)
-
-                            print("ARE WE READY TO LISTEN")
-                            print("Microphone is back Online")
+                            print("Preparing for Audio I/O")
 
                             print("Listeing for second command!")
+                            display_controller.render_text(voice_filler())
                             audio = recognizer.listen(source)
-
-                            print("I GUESS WE ARE")
+                            display_controller.render_text("Ummm...")
+                            print("Resuming Conversation")
 
                             recognized_text = recognizer.recognize_google(
                                 audio)
@@ -275,9 +274,6 @@ def load_audio_files():
     for filename in os.listdir(folder_path):
         if filename.lower().endswith('.mp3'):
             audio_files.append(os.path.join(folder_path, filename))
-
-    global trie  # Assuming trie is a global variable
-
 
 @measure_memory_usage
 async def main():
