@@ -56,17 +56,20 @@ stop_keywords = {'stop', 'quit', 'exit', 'end'}
 display_controller = DisplayController()
 
 @timing
-def check_similar_song(user_input: str):
+def check_similar_song(user_input: str, directory_path: str):
     print("Using V1 Search Algorithm")
     best_match_ratio = 0
     best_match_path = None
 
-    for path in audio_files:
-        ratio = fuzz.partial_ratio(
-            user_input.lower(), os.path.basename(path).lower())
-        if ratio > best_match_ratio:
-            best_match_ratio = ratio
-            best_match_path = path
+    # Iterate over files in the directory directly
+    for filename in os.listdir(directory_path):
+        # Check if the file is an audio file (based on extension, for example)
+        # You can adjust this condition based on your requirements
+        if filename.endswith('.mp3') or filename.endswith('.wav'):  # Add other audio extensions if needed
+            ratio = fuzz.partial_ratio(user_input.lower(), filename.lower())
+            if ratio > best_match_ratio:
+                best_match_ratio = ratio
+                best_match_path = os.path.join(directory_path, filename)
 
     if best_match_path and best_match_ratio >= 70:  # Adjust the threshold as needed
         return True, best_match_path
@@ -156,7 +159,7 @@ async def process_input(recognized_text):
 
     if play_intent:
         similar_song_found, song_path = check_similar_song(
-            recognized_text)
+            recognized_text, 'audio_files/')
         print(
             f"Similar Song Found ? {similar_song_found} and Path {song_path}")
 
@@ -284,7 +287,7 @@ async def main():
         print(f"Output {args.output_text}")
         await output_voice(args.output_text)
     else:
-        load_audio_files()
+        # load_audio_files()
         print(f"Loaded {len(audio_files)} Songs & Rhymes")
         while True:
             await speech_to_text()
