@@ -20,6 +20,7 @@ from nltk.tokenize import sent_tokenize, word_tokenize
 from pydub import AudioSegment
 from pydub.playback import play
 from mem_test import measure_memory_usage
+import atexit
 
 
 os.environ['ALSA_WARNINGS'] = '0'
@@ -54,19 +55,21 @@ stop_keywords = {'stop', 'quit', 'exit', 'end'}
 # Example Usage:
 display_controller = DisplayController()
 
-@timing  # taking 0.0019 sec
-@measure_memory_usage
-def check_similar_song(user_input: str):
+@timing
+def check_similar_song(user_input: str, directory_path: str):
     print("Using V1 Search Algorithm")
     best_match_ratio = 0
     best_match_path = None
 
-    for path in audio_files:
-        ratio = fuzz.partial_ratio(
-            user_input.lower(), os.path.basename(path).lower())
-        if ratio > best_match_ratio:
-            best_match_ratio = ratio
-            best_match_path = path
+    # Iterate over files in the directory directly
+    for filename in os.listdir(directory_path):
+        # Check if the file is an audio file (based on extension, for example)
+        # You can adjust this condition based on your requirements
+        if filename.endswith('.mp3') or filename.endswith('.wav'):  # Add other audio extensions if needed
+            ratio = fuzz.partial_ratio(user_input.lower(), filename.lower())
+            if ratio > best_match_ratio:
+                best_match_ratio = ratio
+                best_match_path = os.path.join(directory_path, filename)
 
     if best_match_path and best_match_ratio >= 70:  # Adjust the threshold as needed
         return True, best_match_path
@@ -75,16 +78,8 @@ def check_similar_song(user_input: str):
 
 
 @timing
-@measure_memory_usage
 async def output_voicev2(text: str, expect_return=False):
     tts = gTTS(text, lang='en')
-    # fp = BytesIO()
-
-    # tts.write_to_fp(fp)
-    # fp.seek(0)
-    # song = AudioSegment.from_file(fp, format="mp3")
-    # play(song)
-
     try:
 
         audio_data = tts.get_audio_data()
@@ -102,19 +97,20 @@ async def output_voicev2(text: str, expect_return=False):
 
 
 @timing
-@measure_memory_usage
 async def output_voice(text: str, expect_return=False):
+    loop = asyncio.get_event_loop()
+    result = await loop.run_in_executor(None, _output_voice_sync, text, expect_return)
+    return result
 
+def _output_voice_sync(text: str, expect_return=False):
     tts = gTTS(text, lang='en')
-
     fp = TemporaryFile()
-
     tts.write_to_fp(fp)
     fp.seek(0)
     song = AudioSegment.from_file(fp, format="mp3")
     play(song)
-
     return expect_return
+
 
 
 def play_audio(audio_path: str):
@@ -135,7 +131,6 @@ microphone = sr.Microphone()
 
 
 @timing
-@measure_memory_usage
 def update_conversation(input, output):
     # Single Operation Conversation
     conversation.extend([
@@ -145,7 +140,6 @@ def update_conversation(input, output):
     print("Conversation Updated")
 
 
-@measure_memory_usage
 @timing
 async def process_input(recognized_text):
     # doc = nlp(recognized_text)
@@ -164,11 +158,10 @@ async def process_input(recognized_text):
 
     print(f"Play Intent? {play_intent}")
     print(f"Stop Intent? {stop_intent}")
-    play_intent = False
-    stop_intent = False
+
     if play_intent:
         similar_song_found, song_path = check_similar_song(
-            recognized_text)
+            recognized_text, 'audio_files/')
         print(
             f"Similar Song Found ? {similar_song_found} and Path {song_path}")
 
@@ -200,7 +193,7 @@ async def process_input(recognized_text):
         speech = response.json()['response']
         update_conversation(recognized_text, speech)
 
-        print(f"Response : {conversation}")
+        # print(f"Response : {conversation}")
         display_controller.render_text_threaded(speech)
         await output_voice(speech)
 
@@ -209,13 +202,13 @@ def voice_filler():
     return random.choice(seq=['yes', 'yes tell me', 'sup', 'whats up', 'yo yo'])
 
 
-@measure_memory_usage
+@timing
 async def speech_to_text():
 
     with sr.Microphone() as source:
         try:
             recognizer.adjust_for_ambient_noise(source, duration=1)
-            # recognizer.energy_threshold =  4000
+            recognizer.energy_threshold =  7000
             print("Energy threshold:", recognizer.energy_threshold)
 
             listen = True
@@ -275,7 +268,7 @@ async def speech_to_text():
 audio_files = []
 
 
-@measure_memory_usage
+@timing
 def load_audio_files():
     folder_path = "audio_files"
 
@@ -283,7 +276,7 @@ def load_audio_files():
         if filename.lower().endswith('.mp3'):
             audio_files.append(os.path.join(folder_path, filename))
 
-@measure_memory_usage
+@timing
 async def main():
     parser = argparse.ArgumentParser(
         description="Process input and optionally generate output audio.")
@@ -296,11 +289,16 @@ async def main():
         print(f"Output {args.output_text}")
         await output_voice(args.output_text)
     else:
-        load_audio_files()
+        # load_audio_files()
         print(f"Loaded {len(audio_files)} Songs & Rhymes")
         while True:
             await speech_to_text()
 
+def cleanup():
+    display_controller.render_text_threaded("Not Running...")
+    print("Cleaning up before exiting...")   
+
+atexit.register(cleanup)
 
 if __name__ == "__main__":
     asyncio.run(main())
