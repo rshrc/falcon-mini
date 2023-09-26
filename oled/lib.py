@@ -55,6 +55,11 @@ class DisplayController:
         self.draw_text(text, (x_pos, y_pos), (255, 255, 255))
         self.display_image()
     
+    def render_text_threaded(self, text):
+        thread = threading.Thread(target=self.render_text, args=(text,))
+        thread.start()
+
+    
     def add_newlines(self, text):
         lines = []
         while text:
@@ -89,15 +94,3 @@ class DisplayController:
 
     def display_image(self):
         self.disp.image(self.image)
-
-# # Example Usage:
-# controller = DisplayController()
-
-# def display_thread(text):
-#     controller.render_text(text)
-
-# display_thread = threading.Thread(target=display_thread)
-
-# # Running Display Parallelly
-# display_thread.start()
-
