@@ -148,7 +148,7 @@ def update_conversation(input, output):
 @measure_memory_usage
 async def process_input(recognized_text):
     # doc = nlp(recognized_text)
-    display_controller.render_text("Let me think....")
+    display_controller.render_text_threaded("Let me think....")
     try:
         tokens = word_tokenize(recognized_text)
         tagged_tokens = pos_tag(tokens)
@@ -200,7 +200,7 @@ async def process_input(recognized_text):
         update_conversation(recognized_text, speech)
 
         print(f"Response : {conversation}")
-        display_controller.render_text(speech)
+        display_controller.render_text_threaded(speech)
         await output_voice(speech)
 
 
