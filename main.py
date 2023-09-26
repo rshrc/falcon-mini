@@ -33,8 +33,7 @@ def timing(f):
         result = f(*args, **kw)
         te = time.time()
 
-        print('func:%r args:[%r, %r] took: %2.8f sec' %
-              (f.__name__, args, kw, te-ts))
+        print(f'func:{f.__name__} args:{args} took: {te-ts:.8f} sec')
         return result
 
     return timed
@@ -201,6 +200,60 @@ async def process_input(recognized_text):
 def voice_filler():
     return random.choice(seq=['yes', 'yes tell me', 'sup', 'whats up', 'yo yo'])
 
+@timing
+async def speech_to_text_v2():
+    recognizer = sr.Recognizer()
+    microphone = sr.Microphone()
+    
+    recognizer.adjust_for_ambient_noise(microphone, duration=1)
+    recognizer.energy_threshold = 7000
+    print("Energy threshold:", recognizer.energy_threshold)
+
+    listen = True
+
+    if listen:
+        print("Listening for Wake Word")
+        display_controller.render_text_threaded("Listening for wake word")
+        
+        with microphone as source:
+            audio = recognizer.listen(source)
+            display_controller.render_text_threaded("Hmmmmmm.....")
+            print("There was some audio input!")
+
+            try:
+                recognized_text = recognizer.recognize_google(audio).lower()
+                print(f"Recognized Text : {recognized_text}")
+
+                wake_word = fuzz.partial_ratio(recognized_text, WAKE_WORD)
+
+                print(f"Wake Word Spoken: {wake_word}")
+
+                if wake_word > 70:
+                    if recognized_text.lower().startswith(WAKE_WORD) and len(recognized_text) == len(WAKE_WORD):
+                        while True:
+                            print("Preparing for Audio I/O")
+
+                            print("Listeing for second command!")
+                            display_controller.render_text_threaded(voice_filler())
+                            audio = recognizer.listen(source)
+                            display_controller.render_text_threaded("Ummm...")
+                            print("Resuming Conversation")
+
+                            recognized_text = recognizer.recognize_google(
+                                audio)
+
+                            print(
+                                f"Recognized Instruction : {recognized_text}")
+
+                            await process_input(recognized_text)
+
+                    else:
+                        command = recognized_text.lower().replace(WAKE_WORD, "").strip()
+
+                        await process_input(command)
+                        
+            except Exception as e:
+                print(f"Error recognizing speech: {e}")
 
 @timing
 async def speech_to_text():
@@ -298,7 +351,10 @@ def cleanup():
     display_controller.render_text_threaded("Not Running...")
     print("Cleaning up before exiting...")   
 
-atexit.register(cleanup)
+def exit_handler():
+    cleanup()
+
+atexit.register(exit_handler)
 
 if __name__ == "__main__":
     asyncio.run(main())
