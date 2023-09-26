@@ -98,7 +98,7 @@ class DisplayController:
 
     def draw_text(self, text, position, fill):
         # print(f"Line 78 {self.add_newlines(text)}")
-        lines = self.add_newlines(text).split("\n")
+        lines = self.add_newlines_v2(text).split("\n")
         y = position[1]
         for line in lines:
             self.draw.text((position[0], y), line, font=self.font, fill=fill)
