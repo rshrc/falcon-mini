@@ -146,6 +146,7 @@ def update_conversation(input, output):
 
 
 @measure_memory_usage
+@timing
 async def process_input(recognized_text):
     # doc = nlp(recognized_text)
     display_controller.render_text_threaded("Let me think....")
@@ -212,57 +213,63 @@ def voice_filler():
 async def speech_to_text():
 
     with sr.Microphone() as source:
+        try:
+            recognizer.adjust_for_ambient_noise(source, duration=1)
+            # recognizer.energy_threshold =  4000
+            print("Energy threshold:", recognizer.energy_threshold)
 
-        recognizer.adjust_for_ambient_noise(source, duration=1)
+            listen = True
 
-        listen = True
+            if listen:
+                print("Listening for Wake Word")
+                display_controller.render_text_threaded("Listening for wake word")
+                audio = recognizer.listen(source)
+                display_controller.render_text_threaded("Hmmmmmm.....")
+                print("There was some audio input!")
 
-        if listen:
-            print("Listening for Wake Word")
-            display_controller.render_text("Listening for wake word")
-            audio = recognizer.listen(source)
-            display_controller.render_text("Hmmmmmm.....")
-            print("There was some audio input!")
+                try:
+                    recognized_text = recognizer.recognize_google(audio).lower()
+                    print(f"Recognized Text : {recognized_text}")
 
-            try:
-                recognized_text = recognizer.recognize_google(audio).lower()
-                print(f"Recognized Text : {recognized_text}")
+                    wake_word = fuzz.partial_ratio(recognized_text, WAKE_WORD)
+                    yes_wake_word = fuzz.partial_ratio(
+                        recognized_text, f"hey panda")
 
-                wake_word = fuzz.partial_ratio(recognized_text, WAKE_WORD)
-                yes_wake_word = fuzz.partial_ratio(
-                    recognized_text, f"hey panda")
+                    print(f"Wake Word Spoken: {wake_word}")
 
-                print(f"Wake Word Spoken: {wake_word}")
+                    if wake_word > 70:
+                        if recognized_text.lower().startswith(WAKE_WORD) and len(recognized_text) == len(WAKE_WORD):
+                            while True:
+                                print("Preparing for Audio I/O")
 
-                if wake_word > 70:
-                    if recognized_text.lower().startswith(WAKE_WORD) and len(recognized_text) == len(WAKE_WORD):
-                        while True:
-                            print("Preparing for Audio I/O")
+                                print("Listeing for second command!")
+                                display_controller.render_text_threaded(voice_filler())
+                                audio = recognizer.listen(source)
+                                display_controller.render_text_threaded("Ummm...")
+                                print("Resuming Conversation")
 
-                            print("Listeing for second command!")
-                            display_controller.render_text(voice_filler())
-                            audio = recognizer.listen(source)
-                            display_controller.render_text("Ummm...")
-                            print("Resuming Conversation")
+                                recognized_text = recognizer.recognize_google(
+                                    audio)
 
-                            recognized_text = recognizer.recognize_google(
-                                audio)
+                                print(
+                                    f"Recognized Instruction : {recognized_text}")
 
-                            print(
-                                f"Recognized Instruction : {recognized_text}")
+                                await process_input(recognized_text)
 
-                            await process_input(recognized_text)
+                        else:
+                            command = recognized_text.lower().replace(WAKE_WORD, "").strip()
+
+                            await process_input(command)
 
                     else:
-                        command = recognized_text.lower().replace(WAKE_WORD, "").strip()
-
-                        await process_input(command)
-
-                else:
-                    pass
-                    print(f"Keep Sleeping")
-            except Exception as e:
-                print(f"Some Error Occoured : {e}")
+                        pass
+                        print(f"Keep Sleeping")
+                except Exception as e:
+                    display_controller.render_text_threaded("Something happened?")
+                    print(f"Some Error Occoured : {e}")
+        except Exception as e:
+            display_controller.render_text_threaded("I heard some noise")
+            print(f"Something Crashed {e}")
 
 
 audio_files = []
