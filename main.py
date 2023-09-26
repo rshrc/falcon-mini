@@ -98,17 +98,19 @@ async def output_voicev2(text: str, expect_return=False):
 
 @timing
 async def output_voice(text: str, expect_return=False):
+    loop = asyncio.get_event_loop()
+    result = await loop.run_in_executor(None, _output_voice_sync, text, expect_return)
+    return result
 
+def _output_voice_sync(text: str, expect_return=False):
     tts = gTTS(text, lang='en')
-
     fp = TemporaryFile()
-
     tts.write_to_fp(fp)
     fp.seek(0)
     song = AudioSegment.from_file(fp, format="mp3")
     play(song)
-
     return expect_return
+
 
 
 def play_audio(audio_path: str):
