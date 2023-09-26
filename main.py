@@ -163,7 +163,8 @@ async def process_input(recognized_text):
 
     print(f"Play Intent? {play_intent}")
     print(f"Stop Intent? {stop_intent}")
-
+    play_intent = False
+    stop_intent = False
     if play_intent:
         similar_song_found, song_path = check_similar_song(
             recognized_text)
