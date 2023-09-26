@@ -1,3 +1,3 @@
-`python -m spacy download en_core_web_sm`
+Run `python3 main.py 2>/dev/null`
 
 ![SVG Image](boot_sequence.svg)

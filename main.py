@@ -20,6 +20,7 @@ from nltk.tokenize import sent_tokenize, word_tokenize
 from pydub import AudioSegment
 from pydub.playback import play
 from mem_test import measure_memory_usage
+import atexit
 
 
 os.environ['ALSA_WARNINGS'] = '0'
@@ -54,8 +55,7 @@ stop_keywords = {'stop', 'quit', 'exit', 'end'}
 # Example Usage:
 display_controller = DisplayController()
 
-@timing  # taking 0.0019 sec
-@measure_memory_usage
+@timing
 def check_similar_song(user_input: str):
     print("Using V1 Search Algorithm")
     best_match_ratio = 0
@@ -75,16 +75,8 @@ def check_similar_song(user_input: str):
 
 
 @timing
-@measure_memory_usage
 async def output_voicev2(text: str, expect_return=False):
     tts = gTTS(text, lang='en')
-    # fp = BytesIO()
-
-    # tts.write_to_fp(fp)
-    # fp.seek(0)
-    # song = AudioSegment.from_file(fp, format="mp3")
-    # play(song)
-
     try:
 
         audio_data = tts.get_audio_data()
@@ -102,7 +94,6 @@ async def output_voicev2(text: str, expect_return=False):
 
 
 @timing
-@measure_memory_usage
 async def output_voice(text: str, expect_return=False):
 
     tts = gTTS(text, lang='en')
@@ -135,7 +126,6 @@ microphone = sr.Microphone()
 
 
 @timing
-@measure_memory_usage
 def update_conversation(input, output):
     # Single Operation Conversation
     conversation.extend([
@@ -145,7 +135,6 @@ def update_conversation(input, output):
     print("Conversation Updated")
 
 
-@measure_memory_usage
 @timing
 async def process_input(recognized_text):
     # doc = nlp(recognized_text)
@@ -164,8 +153,7 @@ async def process_input(recognized_text):
 
     print(f"Play Intent? {play_intent}")
     print(f"Stop Intent? {stop_intent}")
-    play_intent = False
-    stop_intent = False
+
     if play_intent:
         similar_song_found, song_path = check_similar_song(
             recognized_text)
@@ -200,7 +188,7 @@ async def process_input(recognized_text):
         speech = response.json()['response']
         update_conversation(recognized_text, speech)
 
-        print(f"Response : {conversation}")
+        # print(f"Response : {conversation}")
         display_controller.render_text_threaded(speech)
         await output_voice(speech)
 
@@ -209,13 +197,13 @@ def voice_filler():
     return random.choice(seq=['yes', 'yes tell me', 'sup', 'whats up', 'yo yo'])
 
 
-@measure_memory_usage
+@timing
 async def speech_to_text():
 
     with sr.Microphone() as source:
         try:
             recognizer.adjust_for_ambient_noise(source, duration=1)
-            # recognizer.energy_threshold =  4000
+            recognizer.energy_threshold =  7000
             print("Energy threshold:", recognizer.energy_threshold)
 
             listen = True
@@ -275,7 +263,7 @@ async def speech_to_text():
 audio_files = []
 
 
-@measure_memory_usage
+@timing
 def load_audio_files():
     folder_path = "audio_files"
 
@@ -283,7 +271,7 @@ def load_audio_files():
         if filename.lower().endswith('.mp3'):
             audio_files.append(os.path.join(folder_path, filename))
 
-@measure_memory_usage
+@timing
 async def main():
     parser = argparse.ArgumentParser(
         description="Process input and optionally generate output audio.")
@@ -301,6 +289,11 @@ async def main():
         while True:
             await speech_to_text()
 
+def cleanup():
+    display_controller.render_text_threaded("Not Running...")
+    print("Cleaning up before exiting...")   
+
+atexit.register(cleanup)
 
 if __name__ == "__main__":
     asyncio.run(main())
