@@ -48,8 +48,33 @@ WAKE_WORD = os.getenv('WAKE_WORD').lower()
 # Number of conversations that are kept track of
 MEMORY_CONTEXT = 5
 
-play_keywords = {'play', 'song', 'rhyme'}
-stop_keywords = {'stop', 'quit', 'exit', 'end'}
+# play_keywords = {'play', 'song', 'rhyme'}
+play_keywords = {
+    "play",
+    "start",
+    "begin",
+    "playback",
+    "play song",
+    "play video",
+    "start music",
+    "begin song",
+    "play the",
+    "start the"
+}
+# stop_keywords = {'stop', 'quit', 'exit', 'end'}
+stop_keywords = {
+    "stop",
+    "pause",
+    "halt",
+    "end",
+    "stop song",
+    "pause video",
+    "halt music",
+    "end song",
+    "stop the",
+    "pause the"
+}
+
 
 # Example Usage:
 display_controller = DisplayController()
@@ -145,11 +170,31 @@ async def process_input(recognized_text):
     display_controller.render_text_threaded_v2("Let me think....")
     try:
         tokens = word_tokenize(recognized_text)
+
+        bigrams = [" ".join(bigram) for bigram in zip(tokens[:-1], tokens[1:])]
+
         tagged_tokens = pos_tag(tokens)
-        play_intent = any(word.lower() in play_keywords or pos ==
-                        "VB" for word, pos in tagged_tokens)
-        stop_intent = any(word.lower() in stop_keywords or pos ==
-                        "VB" for word, pos in tagged_tokens)
+
+        token_bigrams = [" ".join(bigram) for bigram in bigrams(tokens)]
+
+        # play_intent = any(word.lower() in play_keywords or pos ==
+        #                 "VB" for word, pos in tagged_tokens)
+        # stop_intent = any(word.lower() in stop_keywords or pos ==
+        #                 "VB" for word, pos in tagged_tokens)
+
+        play_intent = any(word.lower() in play_keywords for word, pos in tagged_tokens) or \
+                      any(bigram.lower() in play_keywords for bigram in token_bigrams)
+        
+        # Check for stop intent
+        stop_intent = any(word.lower() in stop_keywords for word, pos in tagged_tokens) or \
+                      any(bigram.lower() in stop_keywords for bigram in token_bigrams)
+        
+        if play_intent and any(pos == "VB" for word, pos in tagged_tokens):
+            play_intent = False
+            
+        if stop_intent and any(pos == "VB" for word, pos in tagged_tokens):
+            stop_intent = False
+
 
     except Exception as e:
         play_intent = False
