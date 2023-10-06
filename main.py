@@ -21,7 +21,7 @@ from pydub import AudioSegment
 from pydub.playback import play
 from mem_test import measure_memory_usage
 import atexit
-
+from concurrent.futures import ThreadPoolExecutor
 
 os.environ['ALSA_WARNINGS'] = '0'
 
@@ -33,8 +33,7 @@ def timing(f):
         result = f(*args, **kw)
         te = time.time()
 
-        print('func:%r args:[%r, %r] took: %2.8f sec' %
-              (f.__name__, args, kw, te-ts))
+        print(f'func:{f.__name__} args:{args} took: {te-ts:.8f} sec')
         return result
 
     return timed
@@ -49,8 +48,33 @@ WAKE_WORD = os.getenv('WAKE_WORD').lower()
 # Number of conversations that are kept track of
 MEMORY_CONTEXT = 5
 
-play_keywords = {'play', 'song', 'rhyme'}
-stop_keywords = {'stop', 'quit', 'exit', 'end'}
+# play_keywords = {'play', 'song', 'rhyme'}
+play_keywords = {
+    "play",
+    "start",
+    "begin",
+    "playback",
+    "play song",
+    "play video",
+    "start music",
+    "begin song",
+    "play the",
+    "start the"
+}
+# stop_keywords = {'stop', 'quit', 'exit', 'end'}
+stop_keywords = {
+    "stop",
+    "pause",
+    "halt",
+    "end",
+    "stop song",
+    "pause video",
+    "halt music",
+    "end song",
+    "stop the",
+    "pause the"
+}
+
 
 # Example Usage:
 display_controller = DisplayController()
@@ -143,14 +167,34 @@ def update_conversation(input, output):
 @timing
 async def process_input(recognized_text):
     # doc = nlp(recognized_text)
-    display_controller.render_text_threaded("Let me think....")
+    display_controller.render_text_threaded_v2("Let me think....")
     try:
         tokens = word_tokenize(recognized_text)
+
+        bigrams = [" ".join(bigram) for bigram in zip(tokens[:-1], tokens[1:])]
+
         tagged_tokens = pos_tag(tokens)
-        play_intent = any(word.lower() in play_keywords or pos ==
-                        "VB" for word, pos in tagged_tokens)
-        stop_intent = any(word.lower() in stop_keywords or pos ==
-                        "VB" for word, pos in tagged_tokens)
+
+        token_bigrams = [" ".join(bigram) for bigram in bigrams(tokens)]
+
+        # play_intent = any(word.lower() in play_keywords or pos ==
+        #                 "VB" for word, pos in tagged_tokens)
+        # stop_intent = any(word.lower() in stop_keywords or pos ==
+        #                 "VB" for word, pos in tagged_tokens)
+
+        play_intent = any(word.lower() in play_keywords for word, pos in tagged_tokens) or \
+                      any(bigram.lower() in play_keywords for bigram in token_bigrams)
+        
+        # Check for stop intent
+        stop_intent = any(word.lower() in stop_keywords for word, pos in tagged_tokens) or \
+                      any(bigram.lower() in stop_keywords for bigram in token_bigrams)
+        
+        if play_intent and any(pos == "VB" for word, pos in tagged_tokens):
+            play_intent = False
+            
+        if stop_intent and any(pos == "VB" for word, pos in tagged_tokens):
+            stop_intent = False
+
 
     except Exception as e:
         play_intent = False
@@ -194,13 +238,73 @@ async def process_input(recognized_text):
         update_conversation(recognized_text, speech)
 
         # print(f"Response : {conversation}")
-        display_controller.render_text_threaded(speech)
+        display_controller.render_text_threaded_v2(speech)
         await output_voice(speech)
 
 
 def voice_filler():
     return random.choice(seq=['yes', 'yes tell me', 'sup', 'whats up', 'yo yo'])
 
+@timing
+async def speech_to_text_v2():
+    recognizer = sr.Recognizer()
+    microphone = sr.Microphone()
+    
+    recognizer.adjust_for_ambient_noise(microphone, duration=1)
+    recognizer.energy_threshold = 7000
+    print("Energy threshold:", recognizer.energy_threshold)
+
+    listen = True
+
+    if listen:
+        print("Listening for Wake Word")
+        display_controller.render_text_threaded_v2("Listening for wake word")
+        
+        with microphone as source:
+            audio = recognizer.listen(source)
+            display_controller.render_text_threaded_v2("Hmmmmmm.....")
+            print("There was some audio input!")
+
+            try:
+                recognized_text = recognizer.recognize_google(audio).lower()
+                print(f"Recognized Text : {recognized_text}")
+
+                with ThreadPoolExecutor() as executor:
+                    wake_word_future = executor.submit(fuzz.partial_ratio, recognized_text, WAKE_WORD)
+                    yes_wake_word_future = executor.submit(fuzz.partial_ratio, recognized_text, "hey panda")
+
+
+
+                wake_word = wake_word_future.result()
+
+                print(f"Wake Word Spoken: {wake_word}")
+
+                if wake_word > 70:
+                    if recognized_text.lower().startswith(WAKE_WORD) and len(recognized_text) == len(WAKE_WORD):
+                        while True:
+                            print("Preparing for Audio I/O")
+
+                            print("Listeing for second command!")
+                            display_controller.render_text_threaded_v2(voice_filler())
+                            audio = recognizer.listen(source)
+                            display_controller.render_text_threaded_v2("Ummm...")
+                            print("Resuming Conversation")
+
+                            recognized_text = recognizer.recognize_google(
+                                audio)
+
+                            print(
+                                f"Recognized Instruction : {recognized_text}")
+
+                            await process_input(recognized_text)
+
+                    else:
+                        command = recognized_text.lower().replace(WAKE_WORD, "").strip()
+
+                        await process_input(command)
+                        
+            except Exception as e:
+                print(f"Error recognizing speech: {e}")
 
 @timing
 async def speech_to_text():
@@ -215,9 +319,9 @@ async def speech_to_text():
 
             if listen:
                 print("Listening for Wake Word")
-                display_controller.render_text_threaded("Listening for wake word")
+                display_controller.render_text_threaded_v2("Listening for wake word")
                 audio = recognizer.listen(source)
-                display_controller.render_text_threaded("Hmmmmmm.....")
+                display_controller.render_text_threaded_v2("Hmmmmmm.....")
                 print("There was some audio input!")
 
                 try:
@@ -236,9 +340,9 @@ async def speech_to_text():
                                 print("Preparing for Audio I/O")
 
                                 print("Listeing for second command!")
-                                display_controller.render_text_threaded(voice_filler())
+                                display_controller.render_text_threaded_v2(voice_filler())
                                 audio = recognizer.listen(source)
-                                display_controller.render_text_threaded("Ummm...")
+                                display_controller.render_text_threaded_v2("Ummm...")
                                 print("Resuming Conversation")
 
                                 recognized_text = recognizer.recognize_google(
@@ -258,10 +362,10 @@ async def speech_to_text():
                         pass
                         print(f"Keep Sleeping")
                 except Exception as e:
-                    display_controller.render_text_threaded("Something happened?")
+                    display_controller.render_text_threaded_v2("Something happened?")
                     print(f"Some Error Occoured : {e}")
         except Exception as e:
-            display_controller.render_text_threaded("I heard some noise")
+            display_controller.render_text_threaded_v2("I heard some noise")
             print(f"Something Crashed {e}")
 
 
@@ -295,10 +399,13 @@ async def main():
             await speech_to_text()
 
 def cleanup():
-    display_controller.render_text_threaded("Not Running...")
+    display_controller.render_text_threaded_v2("Not Running...")
     print("Cleaning up before exiting...")   
 
-atexit.register(cleanup)
+def exit_handler():
+    cleanup()
+
+atexit.register(exit_handler)
 
 if __name__ == "__main__":
     asyncio.run(main())
