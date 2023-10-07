@@ -62,6 +62,7 @@ class DisplayController:
     
     def render_text_threaded(self, text):
         thread = threading.Thread(target=self.render_text, args=(text,))
+        thread.daemon = True
         thread.start()
 
     def add_newlines_v2(self, text):
