@@ -1,9 +1,10 @@
 from flask import Flask, request
 import os
-
+from icecream.icecream import IceCreamDebugger
 from regex import R
 app = Flask(__name__)
 
+ic = IceCreamDebugger()
 
 
 @app.route('/api/set-wifi-credentials', methods=['POST'])
@@ -11,6 +12,9 @@ def set_wifi_credentials():
     try:
         wifi_ssid = request.json.get('ssid')
         wifi_password = request.json.get('password')
+
+        ic(f"Received {wifi_password}, {wifi_ssid}")
+
         network_block = """
             network={
                 ssid=wifi_ssid
@@ -27,14 +31,17 @@ def set_wifi_credentials():
         return f'Credentials updated successfully with {wifi_ssid} and {wifi_password}', 200
 
     except Exception as e:
+        ic(str(e))
         return str(e), 500
 
 @app.route('/api/ping', methods=['GET'])
 def ping_connection():
+    ic("J3 Localserver pinged!")
     return f"Product is Online", 200
 
 @app.route('/api/restart', methods=['GET'])
 def restart():
+    ic("Received signal for restart")
     os.system("sudo ~/LL-MAI-PI-SOFTWARE/scrap_access_point.sh")
     return "Restarted System", 200
 
