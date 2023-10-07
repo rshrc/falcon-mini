@@ -4,6 +4,9 @@ from PIL import Image, ImageDraw, ImageFont
 from adafruit_rgb_display import ili9341
 import threading
 from concurrent.futures import ThreadPoolExecutor
+from icecream.icecream import IceCreamDebugger
+
+ic = IceCreamDebugger()
 
 FONT_PATH = './DejaVuSans.ttf'
 
@@ -57,11 +60,15 @@ class DisplayController:
         self.display_image()
 
     def render_text_threaded_v2(self, text):
-        with ThreadPoolExecutor() as executor:
-            executor.submit(self.render_text, text)
+        # with ThreadPoolExecutor() as executor:
+        #     future = executor.submit(self.render_text, text)
+        #     future.result()
+        # pass
+        self.render_text(text),
     
     def render_text_threaded(self, text):
         thread = threading.Thread(target=self.render_text, args=(text,))
+        thread.daemon = True
         thread.start()
 
     def add_newlines_v2(self, text):
@@ -97,12 +104,11 @@ class DisplayController:
         return '\n'.join(lines)
 
     def draw_text(self, text, position, fill):
-        # print(f"Line 78 {self.add_newlines(text)}")
+        ic(f"Drawing text {text}")
         lines = self.add_newlines_v2(text).split("\n")
         y = position[1]
         for line in lines:
             self.draw.text((position[0], y), line, font=self.font, fill=fill)
-            # y += self.font.getbbox(line)[1]
             y = y+20
 
     def clear_screen(self):

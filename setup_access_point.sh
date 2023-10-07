@@ -45,5 +45,7 @@ sudo sh -c "iptables-save > /etc/iptables.ipv4.nat"
 # Enable iptables on startup
 sudo sed -i '$iiptables-restore < /etc/iptables.ipv4.nat' /etc/rc.local
 
-# Reboot
-sudo reboot
+# Restart services
+sudo systemctl restart dhcpcd
+sudo systemctl restart dnsmasq
+sudo systemctl restart hostapd

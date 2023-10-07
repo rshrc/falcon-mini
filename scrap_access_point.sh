@@ -28,4 +28,6 @@ sudo sh -c "iptables-save > /etc/iptables.ipv4.nat"
 sudo sed -i '/iptables-restore < \/etc\/iptables.ipv4.nat/d' /etc/rc.local
 
 # Reboot
-sudo reboot
+# sudo reboot
+# checking if this works
+sudo systemctl restart dhcpcd

@@ -16,3 +16,6 @@ Run `python3 main.py 2>/dev/null`
 ![OLED Configuration](oled_config.svg)
 
 ![Boot Sequence Image](boot_sequence.svg)
+
+- Read logs using
+`journalctl -u localserverj3.service -f`
