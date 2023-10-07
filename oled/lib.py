@@ -117,3 +117,17 @@ class DisplayController:
 
     def display_image(self):
         self.disp.image(self.image)
+
+
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Control the OLED display.")
+    parser.add_argument("--text", type=str, help="Text to display on the OLED.")
+
+    args = parser.parse_args()
+
+    display = DisplayController()
+
+    if args.text:
+        display.render_text(args.text)
