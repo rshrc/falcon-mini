@@ -9,6 +9,12 @@ SCRIPT_PATH="$APP_DIR/main.py"
 WORKING_DIRECTORY="$APP_DIR"
 USERNAME=rishi
 
+# Create script to handle execution of program
+echo "#!/bin/bash" > "$APP_DIR/start_falcon_mini.sh"
+echo "$PYTHON_EXECUTABLE $SCRIPT_PATH 2>/dev/null" >> "$APP_DIR/start_falcon_mini.sh"
+chmod +x "$APP_DIR/start_falcon_mini.sh"
+
+
 # Create the service file
 cat <<EOF | sudo tee "/etc/systemd/system/$SERVICE_NAME.service" > /dev/null
 [Unit]
@@ -16,7 +22,7 @@ Description=$DESCRIPTION
 After=network.target
 
 [Service]
-ExecStart=/bin/bash -c "$PYTHON_EXECUTABLE $SCRIPT_PATH 2>/dev/null"
+ExecStart=$APP_DIR/start_falcon_mini.sh
 WorkingDirectory=$WORKING_DIRECTORY
 Restart=always
 User=$USERNAME
