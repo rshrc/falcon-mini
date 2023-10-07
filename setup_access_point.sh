@@ -46,4 +46,4 @@ sudo sh -c "iptables-save > /etc/iptables.ipv4.nat"
 sudo sed -i '$iiptables-restore < /etc/iptables.ipv4.nat' /etc/rc.local
 
 # Reboot
-sudo reboot
+# sudo reboot
