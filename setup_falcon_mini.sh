@@ -10,9 +10,9 @@ WORKING_DIRECTORY="$APP_DIR"
 USERNAME=rishi
 
 # Create script to handle execution of program
-echo "#!/bin/bash" > "$APP_DIR/start_falcon_mini.sh"
-echo "$PYTHON_EXECUTABLE $SCRIPT_PATH 2>/dev/null" >> "$APP_DIR/start_falcon_mini.sh"
-chmod +x "$APP_DIR/start_falcon_mini.sh"
+# echo "#!/bin/bash" > "$APP_DIR/start_falcon_mini.sh"
+# echo "$PYTHON_EXECUTABLE $SCRIPT_PATH 2>/dev/null" >> "$APP_DIR/start_falcon_mini.sh"
+# chmod +x "$APP_DIR/start_falcon_mini.sh"
 
 
 # Create the service file
@@ -22,7 +22,7 @@ Description=$DESCRIPTION
 After=network.target
 
 [Service]
-ExecStart=$APP_DIR/start_falcon_mini.sh
+ExecStart=/usr/bin/python3 $APP_DIR/main.py
 WorkingDirectory=$WORKING_DIRECTORY
 Restart=always
 User=$USERNAME
