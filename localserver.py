@@ -23,7 +23,8 @@ def set_wifi_credentials():
             }
         """
         network_block = network_block.replace("wifi_ssid", f"\"{wifi_ssid}\"").replace("wifi_psk", f"\"{wifi_password}\"").strip()
-
+        # remove everything below the 3rd line
+        os.system("sudo sed -i '4,$d' /etc/wpa_supplicant/wpa_supplicant.conf")
         # with open('/etc/wpa_supplicant/wpa_supplicant.conf', 'a') as file:
         # network_block = network_block.replace("Your_SSID", wifi_ssid).replace("Your_PSK_Password", wifi_password)
         os.system(f"sudo echo '{network_block}' >> /etc/wpa_supplicant/wpa_supplicant.conf")
