@@ -14,6 +14,7 @@ import speech_recognition as sr
 from dotenv import load_dotenv
 from fuzzywuzzy import fuzz
 from gtts import gTTS
+from icecream.icecream import IceCreamDebugger
 
 from nltk.tag import pos_tag
 from nltk.tokenize import sent_tokenize, word_tokenize
@@ -21,7 +22,9 @@ from pydub import AudioSegment
 from pydub.playback import play
 from mem_test import measure_memory_usage
 import atexit
+from concurrent.futures import ThreadPoolExecutor
 
+ic = IceCreamDebugger()
 
 os.environ['ALSA_WARNINGS'] = '0'
 
@@ -33,8 +36,7 @@ def timing(f):
         result = f(*args, **kw)
         te = time.time()
 
-        print('func:%r args:[%r, %r] took: %2.8f sec' %
-              (f.__name__, args, kw, te-ts))
+        ic(f'func:{f.__name__} args:{args} took: {te-ts:.8f} sec')
         return result
 
     return timed
@@ -49,15 +51,40 @@ WAKE_WORD = os.getenv('WAKE_WORD').lower()
 # Number of conversations that are kept track of
 MEMORY_CONTEXT = 5
 
-play_keywords = {'play', 'song', 'rhyme'}
-stop_keywords = {'stop', 'quit', 'exit', 'end'}
+# play_keywords = {'play', 'song', 'rhyme'}
+play_keywords = {
+    "play",
+    "start",
+    "begin",
+    "playback",
+    "play song",
+    "play video",
+    "start music",
+    "begin song",
+    "play the",
+    "start the"
+}
+# stop_keywords = {'stop', 'quit', 'exit', 'end'}
+stop_keywords = {
+    "stop",
+    "pause",
+    "halt",
+    "end",
+    "stop song",
+    "pause video",
+    "halt music",
+    "end song",
+    "stop the",
+    "pause the"
+}
+
 
 # Example Usage:
 display_controller = DisplayController()
 
 @timing
 def check_similar_song(user_input: str, directory_path: str):
-    print("Using V1 Search Algorithm")
+    ic("Using V1 Search Algorithm")
     best_match_ratio = 0
     best_match_path = None
 
@@ -91,7 +118,7 @@ async def output_voicev2(text: str, expect_return=False):
             channels=1
         ))
     except Exception as e:
-        print(f"Line 99 : {e}")
+        ic(f"Output Voice Exception : {e}")
 
     return expect_return
 
@@ -116,7 +143,7 @@ def _output_voice_sync(text: str, expect_return=False):
 def play_audio(audio_path: str):
     audio = AudioSegment.from_file(audio_path)
     play(audio)
-    print(f"Playing: {audio_path}")
+    ic(f"Playing: {audio_path}")
 
 
 mp3_fp = BytesIO()
@@ -137,32 +164,52 @@ def update_conversation(input, output):
         {'role': 'user', 'content': input},
         {'role': 'assistant', 'content': output}
     ])
-    print("Conversation Updated")
+    ic("Conversation Updated")
 
 
 @timing
 async def process_input(recognized_text):
     # doc = nlp(recognized_text)
-    display_controller.render_text_threaded("Let me think....")
+    display_controller.render_text_threaded_v2("Let me think....")
     try:
         tokens = word_tokenize(recognized_text)
+
+        bigrams = [" ".join(bigram) for bigram in zip(tokens[:-1], tokens[1:])]
+
         tagged_tokens = pos_tag(tokens)
-        play_intent = any(word.lower() in play_keywords or pos ==
-                        "VB" for word, pos in tagged_tokens)
-        stop_intent = any(word.lower() in stop_keywords or pos ==
-                        "VB" for word, pos in tagged_tokens)
+
+        token_bigrams = [" ".join(bigram) for bigram in bigrams(tokens)]
+
+        # play_intent = any(word.lower() in play_keywords or pos ==
+        #                 "VB" for word, pos in tagged_tokens)
+        # stop_intent = any(word.lower() in stop_keywords or pos ==
+        #                 "VB" for word, pos in tagged_tokens)
+
+        play_intent = any(word.lower() in play_keywords for word, pos in tagged_tokens) or \
+                      any(bigram.lower() in play_keywords for bigram in token_bigrams)
+        
+        # Check for stop intent
+        stop_intent = any(word.lower() in stop_keywords for word, pos in tagged_tokens) or \
+                      any(bigram.lower() in stop_keywords for bigram in token_bigrams)
+        
+        if play_intent and any(pos == "VB" for word, pos in tagged_tokens):
+            play_intent = False
+            
+        if stop_intent and any(pos == "VB" for word, pos in tagged_tokens):
+            stop_intent = False
+
 
     except Exception as e:
         play_intent = False
         stop_intent = False
 
-    print(f"Play Intent? {play_intent}")
-    print(f"Stop Intent? {stop_intent}")
+    ic(f"Play Intent -> {play_intent}")
+    ic(f"Stop Intent -> {stop_intent}")
 
     if play_intent:
         similar_song_found, song_path = check_similar_song(
             recognized_text, 'audio_files/')
-        print(
+        ic(
             f"Similar Song Found ? {similar_song_found} and Path {song_path}")
 
         if song_path is not None:
@@ -184,23 +231,83 @@ async def process_input(recognized_text):
         if len(conversation) > 0:
             data['conversation'] = json.dumps(conversation[:MEMORY_CONTEXT])
 
-        print(f"POST DATA {data}")
+        ic(f"POST DATA {data}")
 
         response = r.post(API_URL, json=data)
 
-        print(response.status_code)
+        ic(response.status_code)
 
         speech = response.json()['response']
         update_conversation(recognized_text, speech)
 
-        # print(f"Response : {conversation}")
-        display_controller.render_text_threaded(speech)
+        # ic(f"Response : {conversation}")
+        display_controller.render_text_threaded_v2(speech)
         await output_voice(speech)
 
 
 def voice_filler():
     return random.choice(seq=['yes', 'yes tell me', 'sup', 'whats up', 'yo yo'])
 
+@timing
+async def speech_to_text_v2():
+    recognizer = sr.Recognizer()
+    microphone = sr.Microphone()
+    
+    recognizer.adjust_for_ambient_noise(microphone, duration=1)
+    recognizer.energy_threshold = 7000
+    ic("Energy threshold:", recognizer.energy_threshold)
+
+    listen = True
+
+    if listen:
+        ic("Listening for Wake Word")
+        display_controller.render_text_threaded_v2("Listening for wake word")
+        
+        with microphone as source:
+            audio = recognizer.listen(source)
+            display_controller.render_text_threaded_v2("Hmmmmmm.....")
+            ic("There was some audio input!")
+
+            try:
+                recognized_text = recognizer.recognize_google(audio).lower()
+                ic(f"Recognized Text : {recognized_text}")
+
+                with ThreadPoolExecutor() as executor:
+                    wake_word_future = executor.submit(fuzz.partial_ratio, recognized_text, WAKE_WORD)
+                    yes_wake_word_future = executor.submit(fuzz.partial_ratio, recognized_text, "hey panda")
+
+
+
+                wake_word = wake_word_future.result()
+
+                ic(f"Wake Word Spoken: {wake_word}")
+
+                if wake_word > 70:
+                    if recognized_text.lower().startswith(WAKE_WORD) and len(recognized_text) == len(WAKE_WORD):
+                        while True:
+                            ic("Preparing for Audio I/O")
+
+                            ic("Listeing for second command!")
+                            display_controller.render_text_threaded_v2(voice_filler())
+                            audio = recognizer.listen(source)
+                            display_controller.render_text_threaded_v2("Ummm...")
+                            ic("Resuming Conversation")
+
+                            recognized_text = recognizer.recognize_google(
+                                audio)
+
+                            ic(
+                                f"Recognized Instruction : {recognized_text}")
+
+                            await process_input(recognized_text)
+
+                    else:
+                        command = recognized_text.lower().replace(WAKE_WORD, "").strip()
+
+                        await process_input(command)
+                        
+            except Exception as e:
+                ic(f"Error recognizing speech: {e}")
 
 @timing
 async def speech_to_text():
@@ -209,42 +316,42 @@ async def speech_to_text():
         try:
             recognizer.adjust_for_ambient_noise(source, duration=1)
             recognizer.energy_threshold =  7000
-            print("Energy threshold:", recognizer.energy_threshold)
+            ic("Energy threshold:", recognizer.energy_threshold)
 
             listen = True
 
             if listen:
-                print("Listening for Wake Word")
-                display_controller.render_text_threaded("Listening for wake word")
+                ic("Listening for Wake Word")
+                display_controller.render_text_threaded_v2("Listening for wake word")
                 audio = recognizer.listen(source)
-                display_controller.render_text_threaded("Hmmmmmm.....")
-                print("There was some audio input!")
+                display_controller.render_text_threaded_v2("Hmmmmmm.....")
+                ic("There was some audio input!")
 
                 try:
                     recognized_text = recognizer.recognize_google(audio).lower()
-                    print(f"Recognized Text : {recognized_text}")
+                    ic(f"Recognized Text : {recognized_text}")
 
                     wake_word = fuzz.partial_ratio(recognized_text, WAKE_WORD)
                     yes_wake_word = fuzz.partial_ratio(
                         recognized_text, f"hey panda")
 
-                    print(f"Wake Word Spoken: {wake_word}")
+                    ic(f"Wake Word Spoken: {wake_word}")
 
                     if wake_word > 70:
                         if recognized_text.lower().startswith(WAKE_WORD) and len(recognized_text) == len(WAKE_WORD):
                             while True:
-                                print("Preparing for Audio I/O")
+                                ic("Preparing for Audio I/O")
 
-                                print("Listeing for second command!")
-                                display_controller.render_text_threaded(voice_filler())
+                                ic("Listeing for second command!")
+                                display_controller.render_text_threaded_v2(voice_filler())
                                 audio = recognizer.listen(source)
-                                display_controller.render_text_threaded("Ummm...")
-                                print("Resuming Conversation")
+                                display_controller.render_text_threaded_v2("Ummm...")
+                                ic("Resuming Conversation")
 
                                 recognized_text = recognizer.recognize_google(
                                     audio)
 
-                                print(
+                                ic(
                                     f"Recognized Instruction : {recognized_text}")
 
                                 await process_input(recognized_text)
@@ -256,13 +363,13 @@ async def speech_to_text():
 
                     else:
                         pass
-                        print(f"Keep Sleeping")
+                        ic(f"Keep Sleeping")
                 except Exception as e:
-                    display_controller.render_text_threaded("Something happened?")
-                    print(f"Some Error Occoured : {e}")
+                    display_controller.render_text_threaded_v2("Something happened?")
+                    ic(f"Some Error Occoured : {e}")
         except Exception as e:
-            display_controller.render_text_threaded("I heard some noise")
-            print(f"Something Crashed {e}")
+            display_controller.render_text_threaded_v2("I heard some noise")
+            ic(f"Something Crashed {e}")
 
 
 audio_files = []
@@ -286,19 +393,22 @@ async def main():
     args = parser.parse_args()
 
     if args.output_text:
-        print(f"Output {args.output_text}")
+        ic(f"Output {args.output_text}")
         await output_voice(args.output_text)
     else:
         # load_audio_files()
-        print(f"Loaded {len(audio_files)} Songs & Rhymes")
+        ic(f"Loaded {len(audio_files)} Songs & Rhymes")
         while True:
             await speech_to_text()
 
 def cleanup():
-    display_controller.render_text_threaded("Not Running...")
-    print("Cleaning up before exiting...")   
+    display_controller.render_text_threaded_v2("Not Running...")
+    ic("Cleaning up before exiting...")   
 
-atexit.register(cleanup)
+def exit_handler():
+    cleanup()
+
+atexit.register(exit_handler)
 
 if __name__ == "__main__":
     asyncio.run(main())
