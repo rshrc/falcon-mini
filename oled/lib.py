@@ -57,9 +57,10 @@ class DisplayController:
         self.display_image()
 
     def render_text_threaded_v2(self, text):
-        with ThreadPoolExecutor() as executor:
-            future = executor.submit(self.render_text, text)
-            future.result()
+        # with ThreadPoolExecutor() as executor:
+        #     future = executor.submit(self.render_text, text)
+        #     future.result()
+        pass
     
     def render_text_threaded(self, text):
         thread = threading.Thread(target=self.render_text, args=(text,))

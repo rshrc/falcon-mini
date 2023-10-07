@@ -16,7 +16,7 @@ Description=$DESCRIPTION
 After=network.target
 
 [Service]
-ExecStart=$PYTHON_EXECUTABLE $SCRIPT_PATH >2/dev/null
+ExecStart=/bin/bash -c "$PYTHON_EXECUTABLE $SCRIPT_PATH 2>/dev/null"
 WorkingDirectory=$WORKING_DIRECTORY
 Restart=always
 User=$USERNAME
