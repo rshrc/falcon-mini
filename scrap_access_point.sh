@@ -4,8 +4,6 @@ pwd
 
 python3 ${PWD}/oled/lib.py --text "Turning Off Hotspot..."
 
-exit 1
-
 # Stop Services
 sudo systemctl stop hostapd
 sudo systemctl stop dnsmasq
