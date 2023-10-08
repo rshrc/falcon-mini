@@ -1,7 +1,10 @@
 from typing import NoReturn, Dict, Any
 import yaml
+import os
 
-def generate_config(user_id: int, filename: str='data.yaml') -> NoReturn:
+dir = os.getcwd()
+
+def generate_config(user_id: int, filename: str=f'{dir}/data.yaml') -> NoReturn:
     data = {
         'user': {
             'id': user_id,
@@ -12,7 +15,7 @@ def generate_config(user_id: int, filename: str='data.yaml') -> NoReturn:
         yaml.safe_dump(data, file, default_flow_style=False)
 
 def read_config() -> Dict[str, Any]:
-    file: str = 'data.yaml'
+    file: str = '{dir}/data.yaml'
 
     with open(file, 'r') as f:
         data: Dict[str, Any] = yaml.safe_load(f)
