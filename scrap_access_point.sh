@@ -1,5 +1,9 @@
 #!/bin/bash
 
+pwd
+
+python3 ${PWD}/oled/lib.py --text "Turning Off Hotspot..."
+
 # Stop Services
 sudo systemctl stop hostapd
 sudo systemctl stop dnsmasq
@@ -31,3 +35,5 @@ sudo sed -i '/iptables-restore < \/etc\/iptables.ipv4.nat/d' /etc/rc.local
 # sudo reboot
 # checking if this works
 sudo systemctl restart dhcpcd
+
+python3 ${PWD}/oled/lib.py --text "Toy Connected to WiFi"

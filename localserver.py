@@ -2,10 +2,24 @@ from flask import Flask, request
 import os
 from icecream.icecream import IceCreamDebugger
 from regex import R
+import asyncio
+from utils.writer import generate_config
+
 app = Flask(__name__)
 
 ic = IceCreamDebugger()
 
+working_dir = os.getcwd()
+
+async def run_script(script: str):
+    proc = await asyncio.create_subprocess_shell(
+        script,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE
+    )
+
+    stdout, stderr = await proc.communicate()
+    return stdout, stderr
 
 @app.route('/api/set-wifi-credentials', methods=['POST'])
 def set_wifi_credentials():
@@ -39,6 +53,30 @@ def set_wifi_credentials():
 def ping_connection():
     ic("J3 Localserver pinged!")
     return f"Product is Online", 200
+
+@app.route('/api/turn_off_hotspot', methods=['GET'])
+async def turn_off_hotspot():
+
+    stdout, stderr = await run_script("sudo ~/LL-MAI-PI-SOFTWARE/scrap_access_point.sh")
+
+    ic(stdout, stderr)
+
+    return "Turned Off Hotspot", 200
+
+@app.route('/api/register_profile', methods=['POST'])
+async def register_profile():
+    ic("Registering Profile")
+
+    uuid = request.json.get('uuid')
+    age = request.json.get('age')
+
+
+
+
+
+
+    return "registerd id", 200
+
 
 @app.route('/api/restart', methods=['GET'])
 def restart():
