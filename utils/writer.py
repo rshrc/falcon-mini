@@ -1,7 +1,7 @@
 from typing import NoReturn
 import yaml
 
-def generate_config(user_id: int, filename: str='config.yaml') -> NoReturn:
+def generate_config(user_id: int, filename: str='data.yaml') -> NoReturn:
     data = {
         'user': {
             'id': user_id,
