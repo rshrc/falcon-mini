@@ -230,6 +230,8 @@ async def process_input(recognized_text):
             'input': recognized_text, 'child_id': IDENTIFIER,
         }
 
+        ic(data)
+
         if len(conversation) > 0:
             data['conversation'] = json.dumps(conversation[:MEMORY_CONTEXT])
 
