@@ -3,6 +3,7 @@ import os
 from icecream.icecream import IceCreamDebugger
 from regex import R
 import asyncio
+from utils.writer import generate_config
 
 app = Flask(__name__)
 
@@ -67,12 +68,12 @@ async def register_profile():
     ic("Registering Profile")
 
     uuid = request.json.get('uuid')
+    age = request.json.get('age')
 
-    cmd = f'[ ! -f {working_dir}/profile ] && touch {working_dir}/profile && echo {uuid} > {working_dir}/profile'
 
-    stdout, stderr = await run_script(cmd)
 
-    ic(stdout, stderr)
+
+
 
     return "registerd id", 200
 
