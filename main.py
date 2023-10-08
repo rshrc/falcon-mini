@@ -15,7 +15,7 @@ from dotenv import load_dotenv
 from fuzzywuzzy import fuzz
 from gtts import gTTS
 from icecream.icecream import IceCreamDebugger
-
+from utils.writer import read_config
 from nltk.tag import pos_tag
 from nltk.tokenize import sent_tokenize, word_tokenize
 from pydub import AudioSegment
@@ -27,6 +27,8 @@ from concurrent.futures import ThreadPoolExecutor
 ic = IceCreamDebugger()
 
 os.environ['ALSA_WARNINGS'] = '0'
+
+IDENTIFIER = read_config()['user']['id']
 
 def timing(f):
 
@@ -225,7 +227,7 @@ async def process_input(recognized_text):
         return
     else:
         data = {
-            'input': recognized_text, 'age': 4,
+            'input': recognized_text, 'child_id': IDENTIFIER,
         }
 
         if len(conversation) > 0:
@@ -397,6 +399,7 @@ async def main():
         await output_voice(args.output_text)
     else:
         # load_audio_files()
+        # load data.yaml config file
         ic(f"Loaded {len(audio_files)} Songs & Rhymes")
         while True:
             await speech_to_text()
