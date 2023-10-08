@@ -8,6 +8,8 @@ app = Flask(__name__)
 
 ic = IceCreamDebugger()
 
+working_dir = os.getcwd()
+
 async def run_script(script: str):
     proc = await asyncio.create_subprocess_shell(
         script,
@@ -60,6 +62,19 @@ async def turn_off_hotspot():
 
     return "Turned Off Hotspot", 200
 
+@app.route('/api/register_profile', methods=['POST'])
+async def register_profile():
+    ic("Registering Profile")
+
+    uuid = request.json.get('uuid')
+
+    cmd = f'[ ! -f {working_dir}/profile ] && touch {working_dir}/profile && echo {uuid} > {working_dir}/profile'
+
+    stdout, stderr = await run_script(cmd)
+
+    ic(stdout, stderr)
+
+    return "registerd id", 200
 
 
 @app.route('/api/restart', methods=['GET'])
