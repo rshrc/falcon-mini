@@ -1,6 +1,7 @@
 import subprocess
 import time
 from icecream.icecream import IceCreamDebugger
+import os
 
 ic = IceCreamDebugger()
 
@@ -25,10 +26,12 @@ def connect_to_internet() -> bool:
         return True
     except subprocess.CalledProcessError:
         return False
+dir = os.getcwd()
     
 def main():
+    success = False
     if  not system_in_access_point_mode():
-        for _ in range(10):  # Try 10 times
+        for _ in range(1):  # Try 10 times
             if connect_to_internet():
                 success = True
                 break
@@ -36,10 +39,12 @@ def main():
 
         if success:
             ic("Connected to Internet")
-            # subprocess.run(['systemctl', 'start', 'falcon_mini.service'])
+            subprocess.run(['sudo', 'systemctl', 'start', 'falcon_mini.service'])
         else:
-            # subprocess.run(['./setup_access_point.sh'])
+            subprocess.run(["sudo", f"{dir}/setup_access_point.sh"])
             ic("Turning into Mock Hotspot")
+    else:
+        pass
 
 if __name__ == "__main__":
     main()
