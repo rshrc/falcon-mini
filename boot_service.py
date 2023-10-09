@@ -12,12 +12,6 @@ def system_in_access_point_mode() -> bool:
     ic(result.stdout.strip())
     return result.stdout.strip() == "active"
 
-# Test
-# if is_in_access_point_mode():
-#     print("The system is in access point mode.")
-# else:
-#     print("The system is not in access point mode.")
-
 def connect_to_internet() -> bool:
     # Implement the logic to try connecting to the internet.
     # This can be a ping command or any other method you prefer.
@@ -44,7 +38,10 @@ def main():
             subprocess.run(["sudo", f"{dir}/setup_access_point.sh"])
             ic("Turning into Mock Hotspot")
     else:
-        pass
+        subprocess.run(["sudo", f"{dir}/scrap_access_point.sh"])
+        ic("Access Point Scrapped, Turning on Wifi")
+
+        subprocess.run("sudo", "systemctl", "restart", "dhcpcd")
 
 if __name__ == "__main__":
     main()
