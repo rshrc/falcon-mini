@@ -20,16 +20,19 @@ def connect_to_internet() -> bool:
         return True
     except subprocess.CalledProcessError:
         return False
+    
 dir = os.getcwd()
     
 def main():
     success = False
-    if  not system_in_access_point_mode():
-        for _ in range(1):  # Try 10 times
+    access_point = system_in_access_point_mode()
+    ic(f"Is Access Point {access_point}")
+    if  not access_point:
+        for _ in range(1):  
             if connect_to_internet():
                 success = True
                 break
-            time.sleep(1)  # Wait for 1 second
+            time.sleep(1)
 
         if success:
             ic("Connected to Internet")

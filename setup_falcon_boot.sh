@@ -1,12 +1,14 @@
 #!/bin/bash
 
 # Variables
-WORKING_DIR=${pwd}
+WORKING_DIR=$(pwd)
 SERVICE_NAME="falcon_boot"
 SERVICE_DESCRIPTION="Falcon Boot Service"
 PYTHON_PATH="/usr/bin/python3"
 SCRIPT_PATH="$WORKING_DIR/boot_service.py"
 USERNAME="rishi"
+
+echo $SCRIPT_PATH
 
 # Create the service file
 cat <<EOL | sudo tee /etc/systemd/system/${SERVICE_NAME}.service
