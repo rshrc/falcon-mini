@@ -1,6 +1,7 @@
-from typing import NoReturn, Dict, Any
-import yaml
 import os
+from typing import Any, Dict, NoReturn
+
+import yaml
 
 dir = os.getcwd()
 

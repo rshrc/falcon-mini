@@ -1,8 +1,10 @@
-from flask import Flask, request
+import asyncio
 import os
+
+from flask import Flask, request
 from icecream.icecream import IceCreamDebugger
 from regex import R
-import asyncio
+
 from utils.writer import generate_config
 
 app = Flask(__name__)

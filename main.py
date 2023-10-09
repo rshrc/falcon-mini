@@ -1,13 +1,15 @@
 import argparse
 import asyncio
+import atexit
 import json
 import os
 import random
 import time
+from concurrent.futures import ThreadPoolExecutor
 from functools import wraps
 from io import BytesIO
 from tempfile import TemporaryFile
-from oled.lib import DisplayController
+
 import nltk
 import requests as r
 import speech_recognition as sr
@@ -15,14 +17,14 @@ from dotenv import load_dotenv
 from fuzzywuzzy import fuzz
 from gtts import gTTS
 from icecream.icecream import IceCreamDebugger
-from utils.writer import read_config
 from nltk.tag import pos_tag
 from nltk.tokenize import sent_tokenize, word_tokenize
 from pydub import AudioSegment
 from pydub.playback import play
+
 from mem_test import measure_memory_usage
-import atexit
-from concurrent.futures import ThreadPoolExecutor
+from oled.lib import DisplayController
+from utils.writer import read_config
 
 ic = IceCreamDebugger()
 
