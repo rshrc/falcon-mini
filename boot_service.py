@@ -5,7 +5,7 @@ from icecream.icecream import IceCreamDebugger
 ic = IceCreamDebugger()
 
 
-def is_in_access_point_mode():
+def system_in_access_point_mode() -> bool:
     # Check the status of the hostapd service
     result = subprocess.run(['systemctl', 'is-active', 'hostapd'], capture_output=True, text=True)
     ic(result.stdout.strip())
@@ -17,7 +17,7 @@ def is_in_access_point_mode():
 # else:
 #     print("The system is not in access point mode.")
 
-def connect_to_internet():
+def connect_to_internet() -> bool:
     # Implement the logic to try connecting to the internet.
     # This can be a ping command or any other method you prefer.
     try:
@@ -27,7 +27,7 @@ def connect_to_internet():
         return False
     
 def main():
-    if is_in_access_point_mode():
+    if  not system_in_access_point_mode():
         for _ in range(10):  # Try 10 times
             if connect_to_internet():
                 success = True
