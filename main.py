@@ -131,7 +131,7 @@ async def output_voicev2(text: str, expect_return=False):
 @timing
 async def output_voice(text: str, expect_return=False):
     loop = asyncio.get_event_loop()
-    result = await loop.run_in_executor(None, _output_voice_sync, text, expect_return)
+    result = await loop.run_in_executor(None, _output_voice_sync2, text, expect_return)
     return result
 
 def _output_voice_sync(text: str, expect_return=False):
