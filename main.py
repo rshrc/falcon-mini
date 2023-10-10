@@ -135,11 +135,17 @@ async def output_voice(text: str, expect_return=False):
 
 def _output_voice_sync(text: str, expect_return=False):
     tts = gTTS(text, lang='en')
-    fp = TemporaryFile()
-    tts.write_to_fp(fp)
-    fp.seek(0)
-    song = AudioSegment.from_file(fp, format="mp3")
-    play(song)
+
+    with BytesIO() as fp:
+        tts.save(fp)
+        fp.seek(0)
+        song = AudioSegment.from_file(fp, format="mp3")
+        play_audio(song)
+    # fp = TemporaryFile()
+    # tts.write_to_fp(fp)
+    # fp.seek(0)
+    # song = AudioSegment.from_file(fp, format="mp3")
+    # play(song)
     return expect_return
 
 
