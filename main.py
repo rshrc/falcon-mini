@@ -9,7 +9,7 @@ from concurrent.futures import ThreadPoolExecutor
 from functools import wraps
 from io import BytesIO
 from tempfile import TemporaryFile
-
+import multiprocessing
 import nltk
 import requests as r
 import speech_recognition as sr
@@ -21,6 +21,7 @@ from nltk.tag import pos_tag
 from nltk.tokenize import sent_tokenize, word_tokenize
 from pydub import AudioSegment
 from pydub.playback import play
+from typing import List
 
 from mem_test import measure_memory_usage
 from oled.lib import DisplayController
@@ -134,21 +135,49 @@ async def output_voice(text: str, expect_return=False):
     return result
 
 def _output_voice_sync(text: str, expect_return=False):
-    tts = gTTS(text, lang='en')
+    # Use multiprocessing.Pool to generate the audio in parallel
+    pool = multiprocessing.Pool(processes=4)  # Adjust the number of processes as needed
 
-    with BytesIO() as fp:
-        tts.save(fp)
-        fp.seek(0)
-        song = AudioSegment.from_file(fp, format="mp3")
-        play_audio(song)
-    # fp = TemporaryFile()
-    # tts.write_to_fp(fp)
-    # fp.seek(0)
-    # song = AudioSegment.from_file(fp, format="mp3")
-    # play(song)
+    # Apply gTTS function to generate the audio in parallel
+    results = [pool.apply_async(generate_audio, (text,)) for _ in range(4)]  # Adjust the number of processes as needed
+
+    # Get the generated audios from the multiprocessing pool
+    audios = [result.get() for result in results]
+
+    # Close the multiprocessing.Pool
+    pool.close()
+    pool.join()
+
+    # Combine the generated audios into a single audio segment
+    song = combine_audios(audios)
+
+    # Play the combined audio
+    play_audio(song)
+
     return expect_return
 
+def _output_voice_sync2(text: str, expect_return=False):
+    tts = gTTS(text, lang='en')
+    fp = TemporaryFile()
+    tts.write_to_fp(fp)
+    fp.seek(0)
+    song = AudioSegment.from_file(fp, format="mp3")
+    play(song)
+    return expect_return
 
+def generate_audio(text: str) -> AudioSegment:
+    tts = gTTS(text, lang='en')
+    fp = BytesIO()
+    tts.save(fp)
+    fp.seek(0)
+    song = AudioSegment.from_file(fp, format="mp3")
+    return song
+
+def combine_audios(audios: List[AudioSegment]) -> AudioSegment:
+    combined = audios[0]
+    for audio in audios[1:]:
+        combined += audio
+    return combined
 
 def play_audio(audio_path: str):
     audio = AudioSegment.from_file(audio_path)
