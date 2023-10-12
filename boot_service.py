@@ -44,7 +44,7 @@ def main():
         subprocess.run(["sudo", f"{dir}/scrap_access_point.sh"])
         ic("Access Point Scrapped, Turning on Wifi")
 
-        subprocess.run("sudo", "systemctl", "restart", "dhcpcd")
+        subprocess.run(["sudo", "systemctl", "restart", "dhcpcd"])
 
 if __name__ == "__main__":
     main()
