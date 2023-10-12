@@ -18,7 +18,7 @@ After=network.target
 
 [Service]
 ExecStart=${PYTHON_PATH} ${SCRIPT_PATH}
-Restart=always
+Restart=no
 User=${USERNAME}
 Environment=PATH=/usr/bin:/bin:/usr/local/bin
 WorkingDirectory=${WORKING_DIR}
