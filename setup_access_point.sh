@@ -4,7 +4,9 @@
 # Update and Upgrade
 # sudo apt update
 # sudo apt upgrade -y
-python3 $(pwd)/oled/lib.py --text "Turning On Hotspot..."
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+python3 $DIR/oled/lib.py --text "Turning On Hotspot..."
+# python3 $(pwd)/oled/lib.py --text "Turning On Hotspot..."
 # Install hostapd and dnsmasq
 sudo apt install hostapd dnsmasq -y
 
@@ -50,4 +52,6 @@ sudo systemctl restart dhcpcd
 sudo systemctl restart dnsmasq
 sudo systemctl restart hostapd
 
-python3 $(pwd)/oled/lib.py --text "User : TalkingPanda\nPassword : Panda1234"
+# DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+python3 $DIR/oled/lib.py --text "Connect to Talking Panda Hotspot"
+# python3 $(pwd)/oled/lib.py --text "User : TalkingPanda\nPassword : Panda1234"
