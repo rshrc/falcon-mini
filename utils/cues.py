@@ -21,12 +21,18 @@ wake_word_cues = [
     "Listening mode on! Awaiting 'Hey Panda'."
 ]
 
+wake_word_dict = {cue: idx for idx, cue in enumerate(wake_word_cues, 1)}
+
+
 audio_received_cues = [
     "Okey-dokey...",
     "Heard that!",
     "Gotcha!",
     "Hmm, let's see...",
 ]
+
+audio_received_dict = {cue: idx for idx, cue in enumerate(audio_received_cues, 1)}
+
 
 awaiting_response_cues = [
     "Let me think...",
@@ -40,3 +46,8 @@ awaiting_response_cues = [
     "Let's see...",
     "Hang on a sec..."
 ]
+
+awaiting_response_dict = {cue: idx for idx, cue in enumerate(awaiting_response_cues, 1)}
+
+
+print(awaiting_response_dict)
