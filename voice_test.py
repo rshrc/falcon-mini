@@ -1,5 +1,5 @@
 from google.cloud import texttospeech
-
+from utils.cues import wake_word_cues, awaiting_response_cues, audio_received_cues
 import os
 
 from pydub import AudioSegment, playback
@@ -60,12 +60,27 @@ class TextToSpeechPlayer:
         self.synthesize_speech(text, output_filename)
         self.load_and_play(output_filename)
 
+    def cues_to_audio_files(self, cue_list, folder_name):
+        # Ensure the folder exists
+        if not os.path.exists(folder_name):
+            os.makedirs(folder_name)
+
+        for cue in cue_list:
+            # Convert the cue to a valid filename (remove special characters, etc.)
+            filename = "".join([c if c.isalnum() or c.isspace() else "_" for c in cue]).rstrip("_") + ".mp3"
+            filepath = os.path.join(folder_name, filename)
+
+            # Use the existing synthesize_speech method to save the cue as audio
+            self.synthesize_speech(cue, filepath)
+
+            print(f"Saved '{cue}' to {filepath}")
+
 
 if __name__=="__main__":
     player = TextToSpeechPlayer()
-    text = "Hello, this is a test for Google Text to Speech."
-    output_filename = "output.mp3"
-    player.text_to_speech(text, output_filename)
+    player.cues_to_audio_files(wake_word_cues, "wake_word_cues")
+    player.cues_to_audio_files(audio_received_cues, "audio_received_cues")
+    player.cues_to_audio_files(awaiting_response_cues, "awaiting_response_cues")
 
 
 # def text_to_speech(text, output_filename):

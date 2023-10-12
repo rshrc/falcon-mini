@@ -213,7 +213,7 @@ def update_conversation(input, output):
 async def process_input(recognized_text):
     # doc = nlp(recognized_text)
     awaiting_response_cue = random.choice(awaiting_response_cues)
-    tts.text_to_speech(awaiting_response_cue, "awaiting_response_cue.mp3")
+    # tts.text_to_speech(awaiting_response_cue, "awaiting_response_cue.mp3")
     display_controller.render_text_threaded_v2(awaiting_response_cue)
     try:
         tokens = word_tokenize(recognized_text)
@@ -309,11 +309,11 @@ async def speech_to_text():
             if listen:
                 ic("Listening for Wake Word")
                 wake_word_cue = random.choice(wake_word_cues)
-                tts.text_to_speech(wake_word_cue, "wake_word_cue.mp3")
+                # tts.text_to_speech(wake_word_cue, "wake_word_cue.mp3")
                 display_controller.render_text_threaded_v2(wake_word_cue)
                 audio = recognizer.listen(source)
                 audio_received_cue = random.choice(audio_received_cues)
-                tts.text_to_speech(audio_received_cue, "audio_received_cue.mp3")
+                # tts.text_to_speech(audio_received_cue, "audio_received_cue.mp3")
                 display_controller.render_text_threaded_v2(audio_received_cue)
                 ic("There was some audio input!")
 
