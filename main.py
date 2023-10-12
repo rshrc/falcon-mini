@@ -220,7 +220,7 @@ async def process_input(recognized_text):
     # play(f"pre_recorded/awaiting_response_cues/{awaiting_response_dict[awaiting_response_cue]}")
     # tts.text_to_speech(awaiting_response_cue, "awaiting_response_cue.mp3")
     display_controller.render_text_threaded_v2(awaiting_response_cue)
-    tts.load_and_play(f"{os.getcwd()}/pre_recorded/awaiting_response_cues/{awaiting_response_dict[awaiting_response_cue]}.mp3")
+    tts.load_and_play(f"{os.getcwd()}/pre_recorded/awaiting_response_cues/{awaiting_response_dict[awaiting_response_cue]}.mp3", use_thread=True)
 
     try:
         tokens = word_tokenize(recognized_text)
@@ -326,7 +326,7 @@ async def speech_to_text():
                 audio_received_cue = random.choice(audio_received_cues)
                 # tts.text_to_speech(audio_received_cue, "audio_received_cue.mp3")
                 display_controller.render_text_threaded_v2(audio_received_cue)
-                tts.load_and_play(f"{os.getcwd()}/pre_recorded/audio_received_cues/{audio_received_dict[audio_received_cue]}.mp3")
+                tts.load_and_play(f"{os.getcwd()}/pre_recorded/audio_received_cues/{audio_received_dict[audio_received_cue]}.mp3", use_thread=True)
                 # play(f"pre_recorded/audio_received_cues/{audio_received_dict[audio_received_cue]}")
                 
                 print("There was some audio input!")

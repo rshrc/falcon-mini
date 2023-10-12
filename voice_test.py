@@ -48,16 +48,17 @@ class TextToSpeechPlayer:
 
         print("Audio Stored")
 
-    def load_and_play(self, filename):
+    def load_and_play(self, filename, use_thread=False):
         audio = AudioSegment.from_mp3(filename)
-        playback_thread = threading.Thread(target=play, args=(audio,))
-        playback_thread.start()
+        if use_thread:
+            playback_thread = threading.Thread(target=play, args=(audio,))
+            playback_thread.start()
 
         # load_audio_time = time.time()
         # print(f"Time to load audio : {load_audio_time - time.time() + load_audio_time:.2f}")
-
+        else:
         # print("Loaded Audio")
-        # # play(audio)
+            play(audio)
         # print(f"To play : {time.time() - load_audio_time:.2f}")
 
     def text_to_speech(self, text, output_filename):
