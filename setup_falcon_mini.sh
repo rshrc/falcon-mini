@@ -24,6 +24,7 @@ After=network.target
 [Service]
 ExecStart=/usr/bin/python3 $APP_DIR/main.py
 WorkingDirectory=$WORKING_DIRECTORY
+Environment="GOOGLE_APPLICATION_CREDENTIALS=$WORKING_DIRECTORY/gconfig.json"
 Restart=always
 User=$USERNAME
 
