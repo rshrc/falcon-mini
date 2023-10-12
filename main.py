@@ -22,6 +22,7 @@ from nltk.tokenize import sent_tokenize, word_tokenize
 from pydub import AudioSegment
 from pydub.playback import play
 from typing import List
+from utils.cues import wake_word_cues, audio_received_cues, awaiting_response_cues
 
 from mem_test import measure_memory_usage
 from oled.lib import DisplayController
@@ -209,7 +210,7 @@ def update_conversation(input, output):
 @timing
 async def process_input(recognized_text):
     # doc = nlp(recognized_text)
-    display_controller.render_text_threaded_v2("Let me think....")
+    display_controller.render_text_threaded_v2(random.choice(awaiting_response_cues))
     try:
         tokens = word_tokenize(recognized_text)
 
@@ -290,67 +291,6 @@ def voice_filler():
     return random.choice(seq=['yes', 'yes tell me', 'sup', 'whats up', 'yo yo'])
 
 @timing
-async def speech_to_text_v2():
-    recognizer = sr.Recognizer()
-    microphone = sr.Microphone()
-    
-    recognizer.adjust_for_ambient_noise(microphone, duration=1)
-    recognizer.energy_threshold = 7000
-    ic("Energy threshold:", recognizer.energy_threshold)
-
-    listen = True
-
-    if listen:
-        ic("Listening for Wake Word")
-        display_controller.render_text_threaded_v2("Listening for wake word")
-        
-        with microphone as source:
-            audio = recognizer.listen(source)
-            display_controller.render_text_threaded_v2("Hmmmmmm.....")
-            ic("There was some audio input!")
-
-            try:
-                recognized_text = recognizer.recognize_google(audio).lower()
-                ic(f"Recognized Text : {recognized_text}")
-
-                with ThreadPoolExecutor() as executor:
-                    wake_word_future = executor.submit(fuzz.partial_ratio, recognized_text, WAKE_WORD)
-                    yes_wake_word_future = executor.submit(fuzz.partial_ratio, recognized_text, "hey panda")
-
-
-
-                wake_word = wake_word_future.result()
-
-                ic(f"Wake Word Spoken: {wake_word}")
-
-                if wake_word > 70:
-                    if recognized_text.lower().startswith(WAKE_WORD) and len(recognized_text) == len(WAKE_WORD):
-                        while True:
-                            ic("Preparing for Audio I/O")
-
-                            ic("Listeing for second command!")
-                            display_controller.render_text_threaded_v2(voice_filler())
-                            audio = recognizer.listen(source)
-                            display_controller.render_text_threaded_v2("Ummm...")
-                            ic("Resuming Conversation")
-
-                            recognized_text = recognizer.recognize_google(
-                                audio)
-
-                            ic(
-                                f"Recognized Instruction : {recognized_text}")
-
-                            await process_input(recognized_text)
-
-                    else:
-                        command = recognized_text.lower().replace(WAKE_WORD, "").strip()
-
-                        await process_input(command)
-                        
-            except Exception as e:
-                ic(f"Error recognizing speech: {e}")
-
-@timing
 async def speech_to_text():
 
     with sr.Microphone() as source:
@@ -363,9 +303,9 @@ async def speech_to_text():
 
             if listen:
                 ic("Listening for Wake Word")
-                display_controller.render_text_threaded_v2("Listening for wake word")
+                display_controller.render_text_threaded_v2(random.choice(wake_word_cues))
                 audio = recognizer.listen(source)
-                display_controller.render_text_threaded_v2("Hmmmmmm.....")
+                display_controller.render_text_threaded_v2(random.choice(audio_received_cues))
                 ic("There was some audio input!")
 
                 try:
