@@ -346,7 +346,7 @@ async def speech_to_text():
                             while True:
                                 print("Preparing for Audio I/O")
 
-                                print("Listeing for second command!")
+                                print("Listening for second command!")
                                 display_controller.render_text_threaded_v2(voice_filler())
                                 audio = recognizer.listen(source)
                                 display_controller.render_text_threaded_v2("Ummm...")
