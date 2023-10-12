@@ -1,13 +1,15 @@
 import argparse
 import asyncio
+import atexit
 import json
 import os
 import random
 import time
+from concurrent.futures import ThreadPoolExecutor
 from functools import wraps
 from io import BytesIO
 from tempfile import TemporaryFile
-from oled.lib import DisplayController
+import multiprocessing
 import nltk
 import requests as r
 import speech_recognition as sr
@@ -15,20 +17,28 @@ from dotenv import load_dotenv
 from fuzzywuzzy import fuzz
 from gtts import gTTS
 from icecream.icecream import IceCreamDebugger
-from utils.writer import read_config
 from nltk.tag import pos_tag
 from nltk.tokenize import sent_tokenize, word_tokenize
 from pydub import AudioSegment
 from pydub.playback import play
+from typing import List
+from utils.cues import wake_word_cues, audio_received_cues, awaiting_response_cues
+from utils.cues import wake_word_dict, audio_received_dict, awaiting_response_dict
+from voice_test import TextToSpeechPlayer
 from mem_test import measure_memory_usage
-import atexit
-from concurrent.futures import ThreadPoolExecutor
+from oled.lib import DisplayController
+from utils.writer import read_config
+from pydub.playback import play
+
+BPRAP = "pre_recorded"
 
 ic = IceCreamDebugger()
 
 os.environ['ALSA_WARNINGS'] = '0'
 
 IDENTIFIER = read_config()['user']['id']
+
+tts = TextToSpeechPlayer()
 
 def timing(f):
 
@@ -38,7 +48,7 @@ def timing(f):
         result = f(*args, **kw)
         te = time.time()
 
-        ic(f'func:{f.__name__} args:{args} took: {te-ts:.8f} sec')
+        print(f'func:{f.__name__} args:{args} took: {te-ts:.8f} sec')
         return result
 
     return timed
@@ -86,7 +96,7 @@ display_controller = DisplayController()
 
 @timing
 def check_similar_song(user_input: str, directory_path: str):
-    ic("Using V1 Search Algorithm")
+    print("Using V1 Search Algorithm")
     best_match_ratio = 0
     best_match_path = None
 
@@ -120,7 +130,7 @@ async def output_voicev2(text: str, expect_return=False):
             channels=1
         ))
     except Exception as e:
-        ic(f"Output Voice Exception : {e}")
+        print(f"Output Voice Exception : {e}")
 
     return expect_return
 
@@ -128,10 +138,32 @@ async def output_voicev2(text: str, expect_return=False):
 @timing
 async def output_voice(text: str, expect_return=False):
     loop = asyncio.get_event_loop()
-    result = await loop.run_in_executor(None, _output_voice_sync, text, expect_return)
+    result = await loop.run_in_executor(None, _output_voice_sync2, text, expect_return)
     return result
 
 def _output_voice_sync(text: str, expect_return=False):
+    # Use multiprocessing.Pool to generate the audio in parallel
+    pool = multiprocessing.Pool(processes=4)  # Adjust the number of processes as needed
+
+    # Apply gTTS function to generate the audio in parallel
+    results = [pool.apply_async(generate_audio, (text,)) for _ in range(4)]  # Adjust the number of processes as needed
+
+    # Get the generated audios from the multiprocessing pool
+    audios = [result.get() for result in results]
+
+    # Close the multiprocessing.Pool
+    pool.close()
+    pool.join()
+
+    # Combine the generated audios into a single audio segment
+    song = combine_audios(audios)
+
+    # Play the combined audio
+    play_audio(song)
+
+    return expect_return
+
+def _output_voice_sync2(text: str, expect_return=False):
     tts = gTTS(text, lang='en')
     fp = TemporaryFile()
     tts.write_to_fp(fp)
@@ -140,12 +172,24 @@ def _output_voice_sync(text: str, expect_return=False):
     play(song)
     return expect_return
 
+def generate_audio(text: str) -> AudioSegment:
+    tts = gTTS(text, lang='en')
+    fp = BytesIO()
+    tts.save(fp)
+    fp.seek(0)
+    song = AudioSegment.from_file(fp, format="mp3")
+    return song
 
+def combine_audios(audios: List[AudioSegment]) -> AudioSegment:
+    combined = audios[0]
+    for audio in audios[1:]:
+        combined += audio
+    return combined
 
 def play_audio(audio_path: str):
     audio = AudioSegment.from_file(audio_path)
     play(audio)
-    ic(f"Playing: {audio_path}")
+    print(f"Playing: {audio_path}")
 
 
 mp3_fp = BytesIO()
@@ -166,13 +210,18 @@ def update_conversation(input, output):
         {'role': 'user', 'content': input},
         {'role': 'assistant', 'content': output}
     ])
-    ic("Conversation Updated")
+    print("Conversation Updated")
 
 
 @timing
 async def process_input(recognized_text):
     # doc = nlp(recognized_text)
-    display_controller.render_text_threaded_v2("Let me think....")
+    awaiting_response_cue = random.choice(awaiting_response_cues)
+    # play(f"pre_recorded/awaiting_response_cues/{awaiting_response_dict[awaiting_response_cue]}")
+    # tts.text_to_speech(awaiting_response_cue, "awaiting_response_cue.mp3")
+    display_controller.render_text_threaded_v2(awaiting_response_cue)
+    tts.load_and_play(f"{os.getcwd()}/pre_recorded/awaiting_response_cues/{awaiting_response_dict[awaiting_response_cue]}.mp3", use_thread=True)
+
     try:
         tokens = word_tokenize(recognized_text)
 
@@ -205,13 +254,13 @@ async def process_input(recognized_text):
         play_intent = False
         stop_intent = False
 
-    ic(f"Play Intent -> {play_intent}")
-    ic(f"Stop Intent -> {stop_intent}")
+    print(f"Play Intent -> {play_intent}")
+    print(f"Stop Intent -> {stop_intent}")
 
     if play_intent:
         similar_song_found, song_path = check_similar_song(
             recognized_text, 'audio_files/')
-        ic(
+        print(
             f"Similar Song Found ? {similar_song_found} and Path {song_path}")
 
         if song_path is not None:
@@ -230,88 +279,28 @@ async def process_input(recognized_text):
             'input': recognized_text, 'child_id': IDENTIFIER,
         }
 
-        ic(data)
+        print(data)
 
         if len(conversation) > 0:
             data['conversation'] = json.dumps(conversation[:MEMORY_CONTEXT])
 
-        ic(f"POST DATA {data}")
+        print(f"POST DATA {data}")
 
         response = r.post(API_URL, json=data)
 
-        ic(response.status_code)
+        print(response.status_code)
 
         speech = response.json()['response']
         update_conversation(recognized_text, speech)
 
-        # ic(f"Response : {conversation}")
+        # print(f"Response : {conversation}")
         display_controller.render_text_threaded_v2(speech)
-        await output_voice(speech)
+        # await output_voice(speech)
+        tts.text_to_speech(speech, "output.mp3")
 
 
 def voice_filler():
     return random.choice(seq=['yes', 'yes tell me', 'sup', 'whats up', 'yo yo'])
-
-@timing
-async def speech_to_text_v2():
-    recognizer = sr.Recognizer()
-    microphone = sr.Microphone()
-    
-    recognizer.adjust_for_ambient_noise(microphone, duration=1)
-    recognizer.energy_threshold = 7000
-    ic("Energy threshold:", recognizer.energy_threshold)
-
-    listen = True
-
-    if listen:
-        ic("Listening for Wake Word")
-        display_controller.render_text_threaded_v2("Listening for wake word")
-        
-        with microphone as source:
-            audio = recognizer.listen(source)
-            display_controller.render_text_threaded_v2("Hmmmmmm.....")
-            ic("There was some audio input!")
-
-            try:
-                recognized_text = recognizer.recognize_google(audio).lower()
-                ic(f"Recognized Text : {recognized_text}")
-
-                with ThreadPoolExecutor() as executor:
-                    wake_word_future = executor.submit(fuzz.partial_ratio, recognized_text, WAKE_WORD)
-                    yes_wake_word_future = executor.submit(fuzz.partial_ratio, recognized_text, "hey panda")
-
-
-
-                wake_word = wake_word_future.result()
-
-                ic(f"Wake Word Spoken: {wake_word}")
-
-                if wake_word > 70:
-                    if recognized_text.lower().startswith(WAKE_WORD) and len(recognized_text) == len(WAKE_WORD):
-                        while True:
-                            ic("Preparing for Audio I/O")
-
-                            ic("Listeing for second command!")
-                            display_controller.render_text_threaded_v2(voice_filler())
-                            audio = recognizer.listen(source)
-                            display_controller.render_text_threaded_v2("Ummm...")
-                            ic("Resuming Conversation")
-
-                            recognized_text = recognizer.recognize_google(
-                                audio)
-
-                            ic(
-                                f"Recognized Instruction : {recognized_text}")
-
-                            await process_input(recognized_text)
-
-                    else:
-                        command = recognized_text.lower().replace(WAKE_WORD, "").strip()
-
-                        await process_input(command)
-                        
-            except Exception as e:
-                ic(f"Error recognizing speech: {e}")
 
 @timing
 async def speech_to_text():
@@ -320,42 +309,53 @@ async def speech_to_text():
         try:
             recognizer.adjust_for_ambient_noise(source, duration=1)
             recognizer.energy_threshold =  7000
-            ic("Energy threshold:", recognizer.energy_threshold)
+            print("Energy threshold:", recognizer.energy_threshold)
 
             listen = True
 
             if listen:
-                ic("Listening for Wake Word")
-                display_controller.render_text_threaded_v2("Listening for wake word")
+                print("Listening for Wake Word")
+                wake_word_cue = random.choice(wake_word_cues)
+                # tts.text_to_speech(wake_word_cue, "wake_word_cue.mp3")
+                display_controller.render_text_threaded_v2(wake_word_cue)
+                tts.load_and_play(f"{os.getcwd()}/pre_recorded/wake_word_cues/{wake_word_dict[wake_word_cue]}.mp3")
+                # tts.play(f"pre_recorded/wake_word_cues/{wake_word_dict[wake_word_cue]}")
+                
+                
                 audio = recognizer.listen(source)
-                display_controller.render_text_threaded_v2("Hmmmmmm.....")
-                ic("There was some audio input!")
+                audio_received_cue = random.choice(audio_received_cues)
+                # tts.text_to_speech(audio_received_cue, "audio_received_cue.mp3")
+                display_controller.render_text_threaded_v2(audio_received_cue)
+                tts.load_and_play(f"{os.getcwd()}/pre_recorded/audio_received_cues/{audio_received_dict[audio_received_cue]}.mp3", use_thread=True)
+                # play(f"pre_recorded/audio_received_cues/{audio_received_dict[audio_received_cue]}")
+                
+                print("There was some audio input!")
 
                 try:
                     recognized_text = recognizer.recognize_google(audio).lower()
-                    ic(f"Recognized Text : {recognized_text}")
+                    print(f"Recognized Text : {recognized_text}")
 
                     wake_word = fuzz.partial_ratio(recognized_text, WAKE_WORD)
                     yes_wake_word = fuzz.partial_ratio(
                         recognized_text, f"hey panda")
 
-                    ic(f"Wake Word Spoken: {wake_word}")
+                    print(f"Wake Word Spoken: {wake_word}")
 
                     if wake_word > 70:
                         if recognized_text.lower().startswith(WAKE_WORD) and len(recognized_text) == len(WAKE_WORD):
                             while True:
-                                ic("Preparing for Audio I/O")
+                                print("Preparing for Audio I/O")
 
-                                ic("Listeing for second command!")
+                                print("Listening for second command!")
                                 display_controller.render_text_threaded_v2(voice_filler())
                                 audio = recognizer.listen(source)
                                 display_controller.render_text_threaded_v2("Ummm...")
-                                ic("Resuming Conversation")
+                                print("Resuming Conversation")
 
                                 recognized_text = recognizer.recognize_google(
                                     audio)
 
-                                ic(
+                                print(
                                     f"Recognized Instruction : {recognized_text}")
 
                                 await process_input(recognized_text)
@@ -367,13 +367,13 @@ async def speech_to_text():
 
                     else:
                         pass
-                        ic(f"Keep Sleeping")
+                        print(f"Keep Sleeping")
                 except Exception as e:
                     display_controller.render_text_threaded_v2("Something happened?")
-                    ic(f"Some Error Occoured : {e}")
+                    print(f"Some Error Occoured : {e}")
         except Exception as e:
             display_controller.render_text_threaded_v2("I heard some noise")
-            ic(f"Something Crashed {e}")
+            print(f"Something Crashed {e}")
 
 
 audio_files = []
@@ -397,18 +397,18 @@ async def main():
     args = parser.parse_args()
 
     if args.output_text:
-        ic(f"Output {args.output_text}")
+        print(f"Output {args.output_text}")
         await output_voice(args.output_text)
     else:
         # load_audio_files()
         # load data.yaml config file
-        ic(f"Loaded {len(audio_files)} Songs & Rhymes")
+        print(f"Loaded {len(audio_files)} Songs & Rhymes")
         while True:
             await speech_to_text()
 
 def cleanup():
     display_controller.render_text_threaded_v2("Not Running...")
-    ic("Cleaning up before exiting...")   
+    print("Cleaning up before exiting...")   
 
 def exit_handler():
     cleanup()

@@ -1,4 +1,5 @@
 import os
+
 wifi_ssid = "RISHI"
 wifi_password = "PASSWORd"
 network_block = """

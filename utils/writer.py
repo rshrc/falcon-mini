@@ -1,18 +1,22 @@
-from typing import NoReturn, Dict, Any
+import os
+from typing import Any, Dict, NoReturn
+
 import yaml
 
-def generate_config(user_id: int, filename: str='data.yaml') -> NoReturn:
+dir = os.getcwd()
+
+def generate_config(user_id: int) -> NoReturn:
     data = {
         'user': {
             'id': user_id,
         }
     }
 
-    with open(filename, 'w') as file:
+    with open(f"{dir}/utils/data.yaml", 'w') as file:
         yaml.safe_dump(data, file, default_flow_style=False)
 
 def read_config() -> Dict[str, Any]:
-    file: str = 'data.yaml'
+    file: str = f'{dir}/utils/data.yaml'
 
     with open(file, 'r') as f:
         data: Dict[str, Any] = yaml.safe_load(f)

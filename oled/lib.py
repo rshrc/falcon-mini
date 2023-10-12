@@ -1,10 +1,11 @@
-import digitalio
-import board
-from PIL import Image, ImageDraw, ImageFont
-from adafruit_rgb_display import ili9341
 import threading
 from concurrent.futures import ThreadPoolExecutor
+
+import board
+import digitalio
+from adafruit_rgb_display import ili9341
 from icecream.icecream import IceCreamDebugger
+from PIL import Image, ImageDraw, ImageFont
 
 ic = IceCreamDebugger()
 

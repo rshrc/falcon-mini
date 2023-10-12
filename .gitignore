@@ -163,3 +163,5 @@ tmp/*
 #.idea/
 
 utils/data.yaml
+output.mp3
+gconfig.json

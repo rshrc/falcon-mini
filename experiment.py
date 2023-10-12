@@ -2,22 +2,20 @@
 #
 # SPDX-License-Identifier: MIT
 
-import threading
 import os
+import random
 import sys
-
+import threading
+import time
 from datetime import datetime, timedelta
 from queue import Queue
-import time
-import random
 from tempfile import NamedTemporaryFile
 
 import azure.cognitiveservices.speech as speechsdk
-import speech_recognition as sr
-import openai
-
 import board
 import digitalio
+import openai
+import speech_recognition as sr
 from adafruit_motorkit import MotorKit
 
 # ChatGPT Parameters

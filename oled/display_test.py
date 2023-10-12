@@ -1,7 +1,7 @@
-import digitalio
 import board
-from PIL import Image, ImageDraw, ImageFont
+import digitalio
 from adafruit_rgb_display import ili9341
+from PIL import Image, ImageDraw, ImageFont
 
 BORDER = 10
 FONTSIZE = 14
