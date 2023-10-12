@@ -23,7 +23,7 @@ from pydub import AudioSegment
 from pydub.playback import play
 from typing import List
 from utils.cues import wake_word_cues, audio_received_cues, awaiting_response_cues
-
+from voice_test import TextToSpeechPlayer
 from mem_test import measure_memory_usage
 from oled.lib import DisplayController
 from utils.writer import read_config
@@ -33,6 +33,8 @@ ic = IceCreamDebugger()
 os.environ['ALSA_WARNINGS'] = '0'
 
 IDENTIFIER = read_config()['user']['id']
+
+tts = TextToSpeechPlayer()
 
 def timing(f):
 
@@ -284,7 +286,8 @@ async def process_input(recognized_text):
 
         # ic(f"Response : {conversation}")
         display_controller.render_text_threaded_v2(speech)
-        await output_voice(speech)
+        # await output_voice(speech)
+        tts.text_to_speech(speech, "output.mp3")
 
 
 def voice_filler():
