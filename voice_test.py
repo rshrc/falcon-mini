@@ -1,8 +1,10 @@
 from google.cloud import texttospeech
 from utils.cues import wake_word_dict, awaiting_response_dict, audio_received_dict
 import os
+import threading
 
-from pydub import AudioSegment, playback
+from pydub import audio_segment
+from pydub.playback import play
 
 import time
 from pydub import AudioSegment
@@ -48,13 +50,15 @@ class TextToSpeechPlayer:
 
     def load_and_play(self, filename):
         audio = AudioSegment.from_mp3(filename)
+        playback_thread = threading.Thread(target=play, args=(audio,))
+        playback_thread.start()
 
-        load_audio_time = time.time()
-        print(f"Time to load audio : {load_audio_time - time.time() + load_audio_time:.2f}")
+        # load_audio_time = time.time()
+        # print(f"Time to load audio : {load_audio_time - time.time() + load_audio_time:.2f}")
 
-        print("Loaded Audio")
-        playback.play(audio)
-        print(f"To play : {time.time() - load_audio_time:.2f}")
+        # print("Loaded Audio")
+        # # play(audio)
+        # print(f"To play : {time.time() - load_audio_time:.2f}")
 
     def text_to_speech(self, text, output_filename):
         self.synthesize_speech(text, output_filename)
