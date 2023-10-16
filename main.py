@@ -6,6 +6,7 @@ import multiprocessing
 import os
 import random
 import time
+from db.utils import store_data, get_data_in_date_range, get_last_n
 from concurrent.futures import ThreadPoolExecutor
 from functools import wraps
 from io import BytesIO
@@ -86,6 +87,10 @@ microphone = sr.Microphone()
 
 @timing
 def update_conversation(input, output):
+
+    # store in DB
+    store_data(input, output)
+    pass
     # Single Operation Conversation
     conversation.extend([
         {'role': 'user', 'content': input},
