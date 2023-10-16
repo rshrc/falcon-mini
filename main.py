@@ -5,13 +5,14 @@ import json
 import multiprocessing
 import os
 import random
+import signal
 import time
-from db.utils import store_data, get_data_in_date_range, get_last_n
 from concurrent.futures import ThreadPoolExecutor
 from functools import wraps
 from io import BytesIO
 from tempfile import TemporaryFile
 from typing import List
+
 import nltk
 import requests as r
 import speech_recognition as sr
@@ -21,9 +22,10 @@ from icecream.icecream import IceCreamDebugger
 from nltk.tag import pos_tag
 from nltk.tokenize import word_tokenize
 
+from db.utils import get_data_in_date_range, get_last_n, store_data
 from oled.lib import DisplayController
 from utils import intents
-from utils.config import read_config, get_configuration
+from utils.config import get_configuration, read_config
 from utils.cues import (audio_received_cues, audio_received_dict,
                         awaiting_response_cues, awaiting_response_dict,
                         wake_word_cues, wake_word_dict)
@@ -47,13 +49,14 @@ BASE_URL = os.getenv('BASE_URL')
 WAKE_WORD = os.getenv('WAKE_WORD').lower()
 
 # Configure Device etc
-configuration = get_configuration()
+configuration = get_configuration
 
 # Number of conversations that are kept track of, depend on get_configuration
 MEMORY_CONTEXT = 5
 
 # Example Usage:
 display_controller = DisplayController()
+
 
 @timing
 def check_similar_song(user_input: str, directory_path: str):
@@ -119,7 +122,6 @@ async def process_input(recognized_text):
 
         token_bigrams = [" ".join(bigram) for bigram in bigrams(tokens)]
 
-
         play_intent = any(word.lower() in intents.play_keywords for word, pos in tagged_tokens) or \
             any(bigram.lower() in intents.play_keywords for bigram in token_bigrams)
 
@@ -152,7 +154,8 @@ async def process_input(recognized_text):
                 recognized_text, f"Played song {song_path}")
         else:
             # todo: random choice should be from directory
-            random_song = random.choice(seq=[f for f in os.listdir('audio_files') if os.path.isfile(os.path.join('audio_files', f))])
+            random_song = random.choice(seq=[f for f in os.listdir(
+                'audio_files') if os.path.isfile(os.path.join('audio_files', f))])
             update_conversation(random_song, f"Played song {random_song}")
             play_audio(random_song)
     elif stop_intent:
@@ -267,8 +270,6 @@ async def interact():
             print(f"Something Crashed {e}")
 
 
-
-
 @timing
 async def main():
     parser = argparse.ArgumentParser(
@@ -297,6 +298,8 @@ def exit_handler():
 
 
 atexit.register(exit_handler)
+signal.signal(signal.SIGINT, exit_handler)
+signal.signal(signal.SIGNINT, exit_handler)
 
 if __name__ == "__main__":
     asyncio.run(main())

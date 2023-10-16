@@ -1,7 +1,9 @@
 # utils.py
 import datetime
-from database import Session
+
 from conversation import Conversation
+from database import Session
+
 
 def store_data(input_text, output_text):
     with Session() as session:
