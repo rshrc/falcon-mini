@@ -6,14 +6,7 @@ import multiprocessing
 import os
 import random
 import signal
-import time
-from concurrent.futures import ThreadPoolExecutor
-from functools import wraps
-from io import BytesIO
-from tempfile import TemporaryFile
-from typing import List
 
-import nltk
 import requests as r
 import speech_recognition as sr
 from dotenv import load_dotenv
