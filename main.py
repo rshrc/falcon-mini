@@ -12,7 +12,6 @@ from functools import wraps
 from io import BytesIO
 from tempfile import TemporaryFile
 from typing import List
-
 import nltk
 import requests as r
 import speech_recognition as sr
@@ -24,7 +23,7 @@ from nltk.tokenize import word_tokenize
 
 from oled.lib import DisplayController
 from utils import intents
-from utils.config import read_config
+from utils.config import read_config, get_configuration
 from utils.cues import (audio_received_cues, audio_received_dict,
                         awaiting_response_cues, awaiting_response_dict,
                         wake_word_cues, wake_word_dict)
@@ -44,15 +43,17 @@ tts = TextToSpeechPlayer()
 load_dotenv()
 
 API_URL = os.getenv('URL')
-
+BASE_URL = os.getenv('BASE_URL')
 WAKE_WORD = os.getenv('WAKE_WORD').lower()
 
-# Number of conversations that are kept track of
+# Configure Device etc
+configuration = get_configuration()
+
+# Number of conversations that are kept track of, depend on get_configuration
 MEMORY_CONTEXT = 5
 
 # Example Usage:
 display_controller = DisplayController()
-
 
 @timing
 def check_similar_song(user_input: str, directory_path: str):
@@ -188,7 +189,7 @@ def voice_filler():
 
 
 @timing
-async def speech_to_text():
+async def interact():
 
     with sr.Microphone() as source:
         try:
@@ -283,7 +284,7 @@ async def main():
     else:
         # load data.yaml config file
         while True:
-            await speech_to_text()
+            await interact()
 
 
 def cleanup():

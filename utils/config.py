@@ -1,9 +1,16 @@
 import os
 from typing import Any, Dict, NoReturn
-
+import requests as r
 import yaml
 
 dir = os.getcwd()
+
+def get_configuration(url, device_uuid):
+    url = f"{url}/api/j3devices/{device_uuid}/"
+    response = r.get(url)
+
+    return response
+
 
 def generate_config(user_id: int) -> NoReturn:
     data = {
