@@ -2,6 +2,7 @@ import argparse
 import asyncio
 import atexit
 import json
+import multiprocessing
 import os
 import random
 import time
@@ -9,28 +10,27 @@ from concurrent.futures import ThreadPoolExecutor
 from functools import wraps
 from io import BytesIO
 from tempfile import TemporaryFile
-import multiprocessing
+from typing import List
+
 import nltk
 import requests as r
 import speech_recognition as sr
 from dotenv import load_dotenv
 from fuzzywuzzy import fuzz
-from gtts import gTTS
 from icecream.icecream import IceCreamDebugger
 from nltk.tag import pos_tag
-from nltk.tokenize import sent_tokenize, word_tokenize
-from pydub import AudioSegment
-from pydub.playback import play
-from typing import List
-from utils.cues import wake_word_cues, audio_received_cues, awaiting_response_cues
-from utils.cues import wake_word_dict, audio_received_dict, awaiting_response_dict
-from voice_test import TextToSpeechPlayer
-from mem_test import measure_memory_usage
-from oled.lib import DisplayController
-from utils.writer import read_config
-from pydub.playback import play
+from nltk.tokenize import word_tokenize
 
-BPRAP = "pre_recorded"
+from oled.lib import DisplayController
+from utils import intents
+from utils.config import read_config
+from utils.cues import (audio_received_cues, audio_received_dict,
+                        awaiting_response_cues, awaiting_response_dict,
+                        wake_word_cues, wake_word_dict)
+from utils.measure import timing
+from utils.voice import TextToSpeechPlayer, output_voice, play_audio
+
+BPRAP = "voice_cues"
 
 ic = IceCreamDebugger()
 
@@ -39,20 +39,6 @@ os.environ['ALSA_WARNINGS'] = '0'
 IDENTIFIER = read_config()['user']['id']
 
 tts = TextToSpeechPlayer()
-
-def timing(f):
-
-    def timed(*args, **kw):
-
-        ts = time.time()
-        result = f(*args, **kw)
-        te = time.time()
-
-        print(f'func:{f.__name__} args:{args} took: {te-ts:.8f} sec')
-        return result
-
-    return timed
-
 
 load_dotenv()
 
@@ -63,36 +49,9 @@ WAKE_WORD = os.getenv('WAKE_WORD').lower()
 # Number of conversations that are kept track of
 MEMORY_CONTEXT = 5
 
-# play_keywords = {'play', 'song', 'rhyme'}
-play_keywords = {
-    "play",
-    "start",
-    "begin",
-    "playback",
-    "play song",
-    "play video",
-    "start music",
-    "begin song",
-    "play the",
-    "start the"
-}
-# stop_keywords = {'stop', 'quit', 'exit', 'end'}
-stop_keywords = {
-    "stop",
-    "pause",
-    "halt",
-    "end",
-    "stop song",
-    "pause video",
-    "halt music",
-    "end song",
-    "stop the",
-    "pause the"
-}
-
-
 # Example Usage:
 display_controller = DisplayController()
+
 
 @timing
 def check_similar_song(user_input: str, directory_path: str):
@@ -104,7 +63,8 @@ def check_similar_song(user_input: str, directory_path: str):
     for filename in os.listdir(directory_path):
         # Check if the file is an audio file (based on extension, for example)
         # You can adjust this condition based on your requirements
-        if filename.endswith('.mp3') or filename.endswith('.wav'):  # Add other audio extensions if needed
+        # Add other audio extensions if needed
+        if filename.endswith('.mp3') or filename.endswith('.wav'):
             ratio = fuzz.partial_ratio(user_input.lower(), filename.lower())
             if ratio > best_match_ratio:
                 best_match_ratio = ratio
@@ -116,86 +76,7 @@ def check_similar_song(user_input: str, directory_path: str):
         return False, None
 
 
-@timing
-async def output_voicev2(text: str, expect_return=False):
-    tts = gTTS(text, lang='en')
-    try:
-
-        audio_data = tts.get_audio_data()
-
-        play(AudioSegment(
-            audio_data,
-            frame_rate=tts.FRAME_RATE,
-            sample_width=tts.sample_width,
-            channels=1
-        ))
-    except Exception as e:
-        print(f"Output Voice Exception : {e}")
-
-    return expect_return
-
-
-@timing
-async def output_voice(text: str, expect_return=False):
-    loop = asyncio.get_event_loop()
-    result = await loop.run_in_executor(None, _output_voice_sync2, text, expect_return)
-    return result
-
-def _output_voice_sync(text: str, expect_return=False):
-    # Use multiprocessing.Pool to generate the audio in parallel
-    pool = multiprocessing.Pool(processes=4)  # Adjust the number of processes as needed
-
-    # Apply gTTS function to generate the audio in parallel
-    results = [pool.apply_async(generate_audio, (text,)) for _ in range(4)]  # Adjust the number of processes as needed
-
-    # Get the generated audios from the multiprocessing pool
-    audios = [result.get() for result in results]
-
-    # Close the multiprocessing.Pool
-    pool.close()
-    pool.join()
-
-    # Combine the generated audios into a single audio segment
-    song = combine_audios(audios)
-
-    # Play the combined audio
-    play_audio(song)
-
-    return expect_return
-
-def _output_voice_sync2(text: str, expect_return=False):
-    tts = gTTS(text, lang='en')
-    fp = TemporaryFile()
-    tts.write_to_fp(fp)
-    fp.seek(0)
-    song = AudioSegment.from_file(fp, format="mp3")
-    play(song)
-    return expect_return
-
-def generate_audio(text: str) -> AudioSegment:
-    tts = gTTS(text, lang='en')
-    fp = BytesIO()
-    tts.save(fp)
-    fp.seek(0)
-    song = AudioSegment.from_file(fp, format="mp3")
-    return song
-
-def combine_audios(audios: List[AudioSegment]) -> AudioSegment:
-    combined = audios[0]
-    for audio in audios[1:]:
-        combined += audio
-    return combined
-
-def play_audio(audio_path: str):
-    audio = AudioSegment.from_file(audio_path)
-    play(audio)
-    print(f"Playing: {audio_path}")
-
-
-mp3_fp = BytesIO()
-
-
-# for memory
+# for memory, TODO: convert to database
 conversation = []
 
 
@@ -217,10 +98,11 @@ def update_conversation(input, output):
 async def process_input(recognized_text):
     # doc = nlp(recognized_text)
     awaiting_response_cue = random.choice(awaiting_response_cues)
-    # play(f"pre_recorded/awaiting_response_cues/{awaiting_response_dict[awaiting_response_cue]}")
+    # play(f"voice_cues/awaiting_response_cues/{awaiting_response_dict[awaiting_response_cue]}")
     # tts.text_to_speech(awaiting_response_cue, "awaiting_response_cue.mp3")
     display_controller.render_text_threaded_v2(awaiting_response_cue)
-    tts.load_and_play(f"{os.getcwd()}/pre_recorded/awaiting_response_cues/{awaiting_response_dict[awaiting_response_cue]}.mp3", use_thread=True)
+    tts.load_and_play(
+        f"{os.getcwd()}/assets/voice_cues/awaiting_response_cues/{awaiting_response_dict[awaiting_response_cue]}.mp3", use_thread=True)
 
     try:
         tokens = word_tokenize(recognized_text)
@@ -231,24 +113,19 @@ async def process_input(recognized_text):
 
         token_bigrams = [" ".join(bigram) for bigram in bigrams(tokens)]
 
-        # play_intent = any(word.lower() in play_keywords or pos ==
-        #                 "VB" for word, pos in tagged_tokens)
-        # stop_intent = any(word.lower() in stop_keywords or pos ==
-        #                 "VB" for word, pos in tagged_tokens)
 
-        play_intent = any(word.lower() in play_keywords for word, pos in tagged_tokens) or \
-                      any(bigram.lower() in play_keywords for bigram in token_bigrams)
-        
+        play_intent = any(word.lower() in intents.play_keywords for word, pos in tagged_tokens) or \
+            any(bigram.lower() in intents.play_keywords for bigram in token_bigrams)
+
         # Check for stop intent
-        stop_intent = any(word.lower() in stop_keywords for word, pos in tagged_tokens) or \
-                      any(bigram.lower() in stop_keywords for bigram in token_bigrams)
-        
+        stop_intent = any(word.lower() in intents.stop_keywords for word, pos in tagged_tokens) or \
+            any(bigram.lower() in intents.stop_keywords for bigram in token_bigrams)
+
         if play_intent and any(pos == "VB" for word, pos in tagged_tokens):
             play_intent = False
-            
+
         if stop_intent and any(pos == "VB" for word, pos in tagged_tokens):
             stop_intent = False
-
 
     except Exception as e:
         play_intent = False
@@ -268,7 +145,8 @@ async def process_input(recognized_text):
             update_conversation(
                 recognized_text, f"Played song {song_path}")
         else:
-            random_song = random.choice(audio_files)
+            # todo: random choice should be from directory
+            random_song = random.choice(seq=[f for f in os.listdir('audio_files') if os.path.isfile(os.path.join('audio_files', f))])
             update_conversation(random_song, f"Played song {random_song}")
             play_audio(random_song)
     elif stop_intent:
@@ -281,7 +159,8 @@ async def process_input(recognized_text):
 
         print(data)
 
-        if len(conversation) > 0:
+        # not gonna take conversation, to reduce token utilization
+        if False and len(conversation) > 0:
             data['conversation'] = json.dumps(conversation[:MEMORY_CONTEXT])
 
         print(f"POST DATA {data}")
@@ -302,13 +181,14 @@ async def process_input(recognized_text):
 def voice_filler():
     return random.choice(seq=['yes', 'yes tell me', 'sup', 'whats up', 'yo yo'])
 
+
 @timing
 async def speech_to_text():
 
     with sr.Microphone() as source:
         try:
             recognizer.adjust_for_ambient_noise(source, duration=1)
-            recognizer.energy_threshold =  7000
+            recognizer.energy_threshold = 7000
             print("Energy threshold:", recognizer.energy_threshold)
 
             listen = True
@@ -318,21 +198,23 @@ async def speech_to_text():
                 wake_word_cue = random.choice(wake_word_cues)
                 # tts.text_to_speech(wake_word_cue, "wake_word_cue.mp3")
                 display_controller.render_text_threaded_v2(wake_word_cue)
-                tts.load_and_play(f"{os.getcwd()}/pre_recorded/wake_word_cues/{wake_word_dict[wake_word_cue]}.mp3")
-                # tts.play(f"pre_recorded/wake_word_cues/{wake_word_dict[wake_word_cue]}")
-                
-                
+                tts.load_and_play(
+                    f"{os.getcwd()}/assets/voice_cues/wake_word_cues/{wake_word_dict[wake_word_cue]}.mp3")
+                # tts.play(f"voice_cues/wake_word_cues/{wake_word_dict[wake_word_cue]}")
+
                 audio = recognizer.listen(source)
                 audio_received_cue = random.choice(audio_received_cues)
                 # tts.text_to_speech(audio_received_cue, "audio_received_cue.mp3")
                 display_controller.render_text_threaded_v2(audio_received_cue)
-                tts.load_and_play(f"{os.getcwd()}/pre_recorded/audio_received_cues/{audio_received_dict[audio_received_cue]}.mp3", use_thread=True)
-                # play(f"pre_recorded/audio_received_cues/{audio_received_dict[audio_received_cue]}")
-                
+                tts.load_and_play(
+                    f"{os.getcwd()}/assets/voice_cues/audio_received_cues/{audio_received_dict[audio_received_cue]}.mp3", use_thread=True)
+                # play(f"voice_cues/audio_received_cues/{audio_received_dict[audio_received_cue]}")
+
                 print("There was some audio input!")
 
                 try:
-                    recognized_text = recognizer.recognize_google(audio).lower()
+                    recognized_text = recognizer.recognize_google(
+                        audio).lower()
                     print(f"Recognized Text : {recognized_text}")
 
                     wake_word = fuzz.partial_ratio(recognized_text, WAKE_WORD)
@@ -347,9 +229,11 @@ async def speech_to_text():
                                 print("Preparing for Audio I/O")
 
                                 print("Listening for second command!")
-                                display_controller.render_text_threaded_v2(voice_filler())
+                                display_controller.render_text_threaded_v2(
+                                    voice_filler())
                                 audio = recognizer.listen(source)
-                                display_controller.render_text_threaded_v2("Ummm...")
+                                display_controller.render_text_threaded_v2(
+                                    "Ummm...")
                                 print("Resuming Conversation")
 
                                 recognized_text = recognizer.recognize_google(
@@ -369,23 +253,15 @@ async def speech_to_text():
                         pass
                         print(f"Keep Sleeping")
                 except Exception as e:
-                    display_controller.render_text_threaded_v2("Something happened?")
+                    display_controller.render_text_threaded_v2(
+                        "Something happened?")
                     print(f"Some Error Occoured : {e}")
         except Exception as e:
             display_controller.render_text_threaded_v2("I heard some noise")
             print(f"Something Crashed {e}")
 
 
-audio_files = []
 
-
-@timing
-def load_audio_files():
-    folder_path = "audio_files"
-
-    for filename in os.listdir(folder_path):
-        if filename.lower().endswith('.mp3'):
-            audio_files.append(os.path.join(folder_path, filename))
 
 @timing
 async def main():
@@ -400,18 +276,19 @@ async def main():
         print(f"Output {args.output_text}")
         await output_voice(args.output_text)
     else:
-        # load_audio_files()
         # load data.yaml config file
-        print(f"Loaded {len(audio_files)} Songs & Rhymes")
         while True:
             await speech_to_text()
 
+
 def cleanup():
     display_controller.render_text_threaded_v2("Not Running...")
-    print("Cleaning up before exiting...")   
+    print("Cleaning up before exiting...")
+
 
 def exit_handler():
     cleanup()
+
 
 atexit.register(exit_handler)
 

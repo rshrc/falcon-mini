@@ -1,8 +1,11 @@
+import os
 import subprocess
 import time
+
 from icecream.icecream import IceCreamDebugger
-import os
+
 from oled.lib import DisplayController
+
 ic = IceCreamDebugger()
 
 display_controller = DisplayController()
@@ -45,12 +48,12 @@ def main():
         else:
             display_controller.render_text_threaded_v2("Turning on Hotspot")
 
-            subprocess.run(["sudo", f"{dir}/setup_access_point.sh"])
+            subprocess.run(["sudo", f"{dir}/scripts/setup/setup_access_point.sh"])
             print("Turning into Mock Hotspot")
     else:
         display_controller.render_text_threaded_v2("Turning Off Hotspot")
 
-        subprocess.run(["sudo", f"{dir}/scrap_access_point.sh"])
+        subprocess.run(["sudo", f"{dir}/scripts/setup/scrap_access_point.sh"])
         print("Access Point Scrapped, Turning on Wifi")
 
         subprocess.run(["sudo", "systemctl", "restart", "dhcpcd"])

@@ -1,1 +1,0 @@
-python3 display/utils.py $1 $2
