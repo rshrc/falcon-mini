@@ -49,7 +49,7 @@ BASE_URL = os.getenv('BASE_URL')
 WAKE_WORD = os.getenv('WAKE_WORD').lower()
 
 # Configure Device etc
-configuration = get_configuration
+configuration = get_configuration()
 
 # Number of conversations that are kept track of, depend on get_configuration
 MEMORY_CONTEXT = 5
