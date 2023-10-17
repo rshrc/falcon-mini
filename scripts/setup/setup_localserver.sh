@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Define the directory for the Flask app
-APP_DIR=$(realpath $(pwd)/../server/)
+APP_DIR='/home/rishi/falcon_mini'
 
 # Create the directory if it doesn't exist
 mkdir -p $APP_DIR

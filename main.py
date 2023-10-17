@@ -268,6 +268,9 @@ async def interact():
 
 @timing
 async def main():
+    while True:
+        ic("I am running indeed")
+        time.sleep(1)
     parser = argparse.ArgumentParser(
         description="Process input and optionally generate output audio.")
     parser.add_argument("-O", "--output", dest="output_text",
