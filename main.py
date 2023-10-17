@@ -4,6 +4,9 @@ import atexit
 import json
 import multiprocessing
 import os
+
+os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = f"{os.getcwd()}/gconfig.json"
+
 import random
 import signal
 

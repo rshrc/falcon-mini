@@ -5,8 +5,6 @@ from flask import Flask, request
 from icecream.icecream import IceCreamDebugger
 from regex import R
 
-from utils.config import generate_config
-
 app = Flask(__name__)
 
 ic = IceCreamDebugger()
