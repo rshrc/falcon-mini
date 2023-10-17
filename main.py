@@ -18,15 +18,15 @@ from icecream.icecream import IceCreamDebugger
 from nltk.tag import pos_tag
 from nltk.tokenize import word_tokenize
 
-from db.utils import get_data_in_date_range, get_last_n, store_data
-from oled.lib import DisplayController
-from utils import intents
-from utils.config import get_configuration, read_config
-from utils.cues import (audio_received_cues, audio_received_dict,
+# from db.utils import get_data_in_date_range, get_last_n, store_data
+from disply_lib import DisplayController
+import intents
+from config import get_configuration, read_config
+from cues import (audio_received_cues, audio_received_dict,
                         awaiting_response_cues, awaiting_response_dict,
                         wake_word_cues, wake_word_dict)
-from utils.measure import timing
-from utils.voice import TextToSpeechPlayer, output_voice, play_audio
+from measure import timing
+from voice import TextToSpeechPlayer, output_voice, play_audio
 
 BPRAP = "voice_cues"
 
@@ -45,7 +45,7 @@ BASE_URL = os.getenv('BASE_URL')
 WAKE_WORD = os.getenv('WAKE_WORD').lower()
 
 # Configure Device etc
-configuration = get_configuration()
+# configuration = get_configuration()
 
 # Number of conversations that are kept track of, depend on get_configuration
 MEMORY_CONTEXT = 5
@@ -89,7 +89,7 @@ microphone = sr.Microphone()
 def update_conversation(input, output):
 
     # store in DB
-    store_data(input, output)
+    # store_data(input, output)
     pass
     # Single Operation Conversation
     conversation.extend([
@@ -284,18 +284,18 @@ async def main():
             await interact()
 
 
-def cleanup():
-    display_controller.render_text_threaded_v2("Not Running...")
-    print("Cleaning up before exiting...")
+# def cleanup():
+#     display_controller.render_text_threaded_v2("Not Running...")
+#     print("Cleaning up before exiting...")
 
 
-def exit_handler():
-    cleanup()
+# def exit_handler():
+#     cleanup()
 
 
-atexit.register(exit_handler)
-signal.signal(signal.SIGINT, exit_handler)
-signal.signal(signal.SIGNINT, exit_handler)
+# atexit.register(exit_handler)
+# signal.signal(signal.SIGINT, exit_handler)
+# signal.signal(signal.SIGNINT, exit_handler)
 
 if __name__ == "__main__":
     asyncio.run(main())

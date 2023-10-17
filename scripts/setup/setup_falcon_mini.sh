@@ -1,7 +1,10 @@
 #!/bin/bash
 
 # Define variables
-APP_DIR=$(pwd)
+APP_DIR=$(realpath "$(pwd)/../../")
+
+echo $APP_DIR
+
 SERVICE_NAME="falcon_mini"
 DESCRIPTION="Falcon Mini"
 PYTHON_EXECUTABLE="/usr/bin/python3"

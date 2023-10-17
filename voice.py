@@ -10,7 +10,7 @@ from measure import timing
 from pydub import AudioSegment
 from pydub.playback import play
 
-from utils.cues import (audio_received_dict, awaiting_response_dict,
+from cues import (audio_received_dict, awaiting_response_dict,
                         wake_word_dict)
 
 

@@ -17,7 +17,7 @@ sudo sed -i '/interface wlan0/,+2d' /etc/dhcpcd.conf
 sudo mv /etc/dnsmasq.conf.orig /etc/dnsmasq.conf
 
 # Remove hostapd configuration
-sudo rm /etc/hostapd/hostapd.conf
+# sudo rm /etc/hostapd/hostapd.conf
 
 # Restore original hostapd default file
 sudo sed -i 's/DAEMON_CONF="\/etc\/hostapd\/hostapd.conf"/#DAEMON_CONF=""/' /etc/default/hostapd

@@ -16,11 +16,12 @@ echo $WORKING_DIR
 cat <<EOL | sudo tee /etc/systemd/system/${SERVICE_NAME}.service
 [Unit]
 Description=${SERVICE_DESCRIPTION}
-After=network.target
+After=network-online.target remote-fs.target
+Wants=network-online.target remote-fs.target
 
 [Service]
 ExecStart=${PYTHON_PATH} -m services.boot_service
-Restart=no
+Restart=on-failure
 User=${USERNAME}
 Environment=PYTHONPATH=/home/rishi/falcon_mini
 WorkingDirectory=${WORKING_DIR}
