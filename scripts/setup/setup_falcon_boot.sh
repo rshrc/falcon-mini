@@ -1,14 +1,16 @@
 #!/bin/bash
 
 # Variables
-WORKING_DIR=$(pwd)
+WORKING_DIR=$(realpath "$(pwd)/../../")
 SERVICE_NAME="falcon_boot"
 SERVICE_DESCRIPTION="Falcon Boot Service"
 PYTHON_PATH="/usr/bin/python3"
-SCRIPT_PATH="$WORKING_DIR/boot_service.py"
+# SCRIPT_PATH=$(realpath "$WORKING_DIR/../../")
 USERNAME=root
 
-echo $SCRIPT_PATH
+echo $WORKING_DIR
+
+# exit 1
 
 # Create the service file
 cat <<EOL | sudo tee /etc/systemd/system/${SERVICE_NAME}.service
@@ -17,10 +19,10 @@ Description=${SERVICE_DESCRIPTION}
 After=network.target
 
 [Service]
-ExecStart=${PYTHON_PATH} ${SCRIPT_PATH}
+ExecStart=${PYTHON_PATH} -m services.boot_service
 Restart=no
 User=${USERNAME}
-Environment=PATH=/usr/bin:/bin:/usr/local/bin
+Environment=PYTHONPATH=/home/rishi/falcon_mini
 WorkingDirectory=${WORKING_DIR}
 
 [Install]
