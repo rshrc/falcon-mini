@@ -4,7 +4,7 @@ import os
 from flask import Flask, request
 from icecream.icecream import IceCreamDebugger
 from regex import R
-
+import subprocess
 app = Flask(__name__)
 
 ic = IceCreamDebugger()
@@ -76,7 +76,8 @@ async def register_profile():
 @app.route('/api/restart', methods=['GET'])
 def restart():
     ic("Received signal for restart")
-    os.system("sudo ~/LL-MAI-PI-SOFTWARE/scripts/setup/scrap_access_point.sh")
+    subprocess.call(["sudo", "/home/rishi/falcon_mini/scripts/setup/scrap_access_point.sh"])
+    # os.system("sudo ~/LL-MAI-PI-SOFTWARE/scripts/setup/scrap_access_point.sh")
     return "Restarted System", 200
 
 if __name__ == '__main__':

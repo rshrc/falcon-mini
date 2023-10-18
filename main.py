@@ -7,7 +7,7 @@ import os
 import sys
 import time
 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = f"{os.getcwd()}/gconfig.json"
-
+import subprocess
 import random
 import signal
 
@@ -30,6 +30,11 @@ from cues import (audio_received_cues, audio_received_dict,
                         wake_word_cues, wake_word_dict)
 from measure import timing
 from voice import TextToSpeechPlayer, output_voice, play_audio
+
+def increase_volume():
+    subprocess.call(['sudo', ''])
+
+increase_volume()
 
 BPRAP = "voice_cues"
 
@@ -66,7 +71,7 @@ elif isinstance(configuration, DeviceConfig):
 else:
     print("Unexpected type of configuration data.")
 
-sys.exit()
+# sys.exit()
 
 
 # Number of conversations that are kept track of, depend on get_configuration
@@ -202,7 +207,7 @@ async def process_input(recognized_text):
         # print(f"Response : {conversation}")
         display_controller.render_text_threaded_v2(speech)
         # await output_voice(speech)
-        #tts.text_to_speech(speech, "output.mp3")
+        tts.text_to_speech(speech, "output.mp3")
 
 
 def voice_filler():
@@ -290,9 +295,9 @@ async def interact():
 
 @timing
 async def main():
-    while True:
-        ic("I am running indeed")
-        time.sleep(1)
+    # while True:
+    #     ic("I am running indeed")
+    #     time.sleep(1)
     parser = argparse.ArgumentParser(
         description="Process input and optionally generate output audio.")
     parser.add_argument("-O", "--output", dest="output_text",
