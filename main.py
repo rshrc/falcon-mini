@@ -5,7 +5,7 @@ import json
 import multiprocessing
 import os
 import sys
-
+import time
 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = f"{os.getcwd()}/gconfig.json"
 
 import random
@@ -18,14 +18,13 @@ from fuzzywuzzy import fuzz
 from icecream.icecream import IceCreamDebugger
 from nltk.tag import pos_tag
 from nltk.tokenize import word_tokenize
-# from conversation import store_data
 from config import get_configuration
 from utils import store_data, get_last_n
 
 # from db.utils import get_data_in_date_range, get_last_n, store_data
 from disply_lib import DisplayController
 import intents
-from config import get_configuration, read_config
+from config import get_configuration, read_config, DeviceConfig
 from cues import (audio_received_cues, audio_received_dict,
                         awaiting_response_cues, awaiting_response_dict,
                         wake_word_cues, wake_word_dict)
@@ -54,16 +53,23 @@ test_device_uuid = "5caa2cef-3411-4368-9a6d-f9eefe9c34f9"
 # Configure Device etc
 configuration = get_configuration(BASE_URL, test_device_uuid)
 
+MEMORY_CONTEXT = 0
+
 if isinstance(configuration, str):
     print(configuration)
-elif isinstance(configuration, r.Response):
-    print(configuration.text)
+elif isinstance(configuration, DeviceConfig):
+    print(configuration.to_dict)
+
+    MEMORY_CONTEXT = configuration.memory.context_limit
+
+    print(f"Line 65 {MEMORY_CONTEXT}")
 else:
     print("Unexpected type of configuration data.")
 
+sys.exit()
+
 
 # Number of conversations that are kept track of, depend on get_configuration
-MEMORY_CONTEXT = 5
 
 # Example Usage:
 display_controller = DisplayController()
