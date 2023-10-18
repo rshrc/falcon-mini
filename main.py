@@ -32,7 +32,7 @@ from measure import timing
 from voice import TextToSpeechPlayer, output_voice, play_audio
 
 def increase_volume():
-    subprocess.call(['sudo', ''])
+    subprocess.call(['sudo', '/home/rishi/falcon_mini/scripts/setup/set_volume.sh'])
 
 increase_volume()
 
