@@ -6,7 +6,7 @@ SERVICE_NAME="falcon_boot"
 SERVICE_DESCRIPTION="Falcon Boot Service"
 PYTHON_PATH="/usr/bin/python3"
 # SCRIPT_PATH=$(realpath "$WORKING_DIR/../../")
-USERNAME=rishi #root
+USERNAME=root
 
 echo $WORKING_DIR
 

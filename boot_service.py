@@ -2,11 +2,11 @@ import os
 import subprocess
 import time
 import logging
-from disply_lib import DisplayController
+# from disply_lib import DisplayController
 
 logging.basicConfig(level=logging.INFO)
 
-dpc = DisplayController()
+# dpc = DisplayController()
 
 def system_in_access_point_mode() -> bool:
     result = subprocess.run(['systemctl', 'is-active', 'hostapd'], capture_output=True, text=True)
@@ -42,11 +42,11 @@ def main():
     access_point = system_in_access_point_mode()
 
     if not access_point:
-        dpc.render_text_threaded_v2("Not In Hotspot Mode")
+        # dpc.render_text_threaded_v2("Not In Hotspot Mode")
         logging.info("System Not In Access Point Mode")
         for trial in range(5):  # Try 5 times with a delay
             logging.info(f"Trying to Connect for {trial} number...")
-            dpc.render_text_threaded_v2("Trying to connect... This may take a while.")
+            # dpc.render_text_threaded_v2("Trying to connect... This may take a while.")
             if connect_to_internet():
                 success = True
                 break
@@ -55,8 +55,9 @@ def main():
 
         if success:
             logging.info("Connected to Internet")
-            dpc.render_text_threaded_v2("Connected to Internet.. Starting Talking Panda")
-            subprocess.run(['sudo', 'systemctl', 'start', 'falcon_mini.service'])
+            # dpc.render_text_threaded_v2("Connected to Internet.. Starting Talking Panda")
+            output = subprocess.run(['sudo', 'systemctl', 'start', 'falcon_mini.service'], capture_output=True, text=True)
+            logging.info(f"For Starting Falcon Mini > {output}")
         else:
             logging.info("Turning into Mock Hotspot")
             for _ in range(5):  # Try 5 times
