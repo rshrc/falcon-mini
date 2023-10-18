@@ -4,6 +4,7 @@ import atexit
 import json
 import multiprocessing
 import os
+import sys
 
 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = f"{os.getcwd()}/gconfig.json"
 
@@ -17,6 +18,9 @@ from fuzzywuzzy import fuzz
 from icecream.icecream import IceCreamDebugger
 from nltk.tag import pos_tag
 from nltk.tokenize import word_tokenize
+# from conversation import store_data
+from config import get_configuration
+from utils import store_data, get_last_n
 
 # from db.utils import get_data_in_date_range, get_last_n, store_data
 from disply_lib import DisplayController
@@ -44,8 +48,19 @@ API_URL = os.getenv('URL')
 BASE_URL = os.getenv('BASE_URL')
 WAKE_WORD = os.getenv('WAKE_WORD').lower()
 
+test_device_uuid = "5caa2cef-3411-4368-9a6d-f9eefe9c34f9"
+
+
 # Configure Device etc
-# configuration = get_configuration()
+configuration = get_configuration(BASE_URL, test_device_uuid)
+
+if isinstance(configuration, str):
+    print(configuration)
+elif isinstance(configuration, r.Response):
+    print(configuration.text)
+else:
+    print("Unexpected type of configuration data.")
+
 
 # Number of conversations that are kept track of, depend on get_configuration
 MEMORY_CONTEXT = 5
@@ -89,14 +104,14 @@ microphone = sr.Microphone()
 def update_conversation(input, output):
 
     # store in DB
-    # store_data(input, output)
-    pass
+    store_data(input, output)
+    
     # Single Operation Conversation
-    conversation.extend([
-        {'role': 'user', 'content': input},
-        {'role': 'assistant', 'content': output}
-    ])
-    print("Conversation Updated")
+    # conversation.extend([
+    #     {'role': 'user', 'content': input},
+    #     {'role': 'assistant', 'content': output}
+    # ])
+    # print("Conversation Updated")
 
 
 @timing
@@ -165,6 +180,7 @@ async def process_input(recognized_text):
         print(data)
 
         # not gonna take conversation, to reduce token utilization
+        
         if False and len(conversation) > 0:
             data['conversation'] = json.dumps(conversation[:MEMORY_CONTEXT])
 
@@ -180,7 +196,7 @@ async def process_input(recognized_text):
         # print(f"Response : {conversation}")
         display_controller.render_text_threaded_v2(speech)
         # await output_voice(speech)
-        tts.text_to_speech(speech, "output.mp3")
+        #tts.text_to_speech(speech, "output.mp3")
 
 
 def voice_filler():
