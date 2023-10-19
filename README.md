@@ -13,9 +13,9 @@ Run `python3 main.py 2>/dev/null`
 ### Flask Service
 `journalctl -f -u localserverj3.service`
 
-![OLED Configuration](oled_config.svg)
+![OLED Configuration](assets/oled_config.svg)
 
-![Boot Sequence Image](boot_sequence.svg)
+![Boot Sequence Image](assets/boot_sequence.svg)
 
 - Read logs using
 `journalctl -u localserverj3.service -f`
