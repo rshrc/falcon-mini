@@ -4,9 +4,7 @@ import os
 from flask import Flask, request
 from icecream.icecream import IceCreamDebugger
 from regex import R
-
-from utils.writer import generate_config
-
+import subprocess
 app = Flask(__name__)
 
 ic = IceCreamDebugger()
@@ -59,7 +57,7 @@ def ping_connection():
 @app.route('/api/turn_off_hotspot', methods=['GET'])
 async def turn_off_hotspot():
 
-    stdout, stderr = await run_script("sudo ~/LL-MAI-PI-SOFTWARE/scrap_access_point.sh")
+    stdout, stderr = await run_script("sudo ~/LL-MAI-PI-SOFTWARE/scripts/setup/scrap_access_point.sh")
 
     ic(stdout, stderr)
 
@@ -72,18 +70,14 @@ async def register_profile():
     uuid = request.json.get('uuid')
     age = request.json.get('age')
 
-
-
-
-
-
     return "registerd id", 200
 
 
 @app.route('/api/restart', methods=['GET'])
 def restart():
     ic("Received signal for restart")
-    os.system("sudo ~/LL-MAI-PI-SOFTWARE/scrap_access_point.sh")
+    subprocess.call(["sudo", "/home/rishi/falcon_mini/scripts/setup/scrap_access_point.sh"])
+    # os.system("sudo ~/LL-MAI-PI-SOFTWARE/scripts/setup/scrap_access_point.sh")
     return "Restarted System", 200
 
 if __name__ == '__main__':

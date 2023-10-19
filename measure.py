@@ -1,6 +1,21 @@
+import time
 from functools import wraps
 
 import psutil
+
+
+def timing(f):
+
+    def timed(*args, **kw):
+
+        ts = time.time()
+        result = f(*args, **kw)
+        te = time.time()
+
+        print(f'func:{f.__name__} args:{args} took: {te-ts:.8f} sec')
+        return result
+
+    return timed
 
 
 def measure_memory_usage(func):

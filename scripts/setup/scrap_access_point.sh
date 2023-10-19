@@ -1,8 +1,10 @@
 #!/bin/bash
 
 pwd
+# DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+# python3 $DIR/oled/lib.py --text "Turning Off Hotspot..."
 
-python3 ${PWD}/oled/lib.py --text "Turning Off Hotspot..."
+# python3 $(pwd)/oled/lib.py --text "Turning Off Hotspot..."
 
 # Stop Services
 sudo systemctl stop hostapd
@@ -15,7 +17,7 @@ sudo sed -i '/interface wlan0/,+2d' /etc/dhcpcd.conf
 sudo mv /etc/dnsmasq.conf.orig /etc/dnsmasq.conf
 
 # Remove hostapd configuration
-sudo rm /etc/hostapd/hostapd.conf
+# sudo rm /etc/hostapd/hostapd.conf
 
 # Restore original hostapd default file
 sudo sed -i 's/DAEMON_CONF="\/etc\/hostapd\/hostapd.conf"/#DAEMON_CONF=""/' /etc/default/hostapd
@@ -36,4 +38,6 @@ sudo sed -i '/iptables-restore < \/etc\/iptables.ipv4.nat/d' /etc/rc.local
 # checking if this works
 sudo systemctl restart dhcpcd
 
-python3 ${PWD}/oled/lib.py --text "Toy Connected to WiFi"
+# python3 $DIR/oled/lib.py --text "Toy Connected to WiFi"
+
+# python3 $(pwd)/oled/lib.py --text "Toy Connected to WiFi"

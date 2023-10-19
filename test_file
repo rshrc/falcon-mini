@@ -1,7 +1,0 @@
-
-            network={
-                ssid=RISHI
-                psk=PASSWORd
-                key_mgmt=WPA-PSK
-            }
-        

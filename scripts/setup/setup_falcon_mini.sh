@@ -1,7 +1,10 @@
 #!/bin/bash
 
 # Define variables
-APP_DIR=$(pwd)
+APP_DIR=$(realpath "$(pwd)/../../")
+
+echo $APP_DIR
+
 SERVICE_NAME="falcon_mini"
 DESCRIPTION="Falcon Mini"
 PYTHON_EXECUTABLE="/usr/bin/python3"
@@ -24,6 +27,7 @@ After=network.target
 [Service]
 ExecStart=/usr/bin/python3 $APP_DIR/main.py
 WorkingDirectory=$WORKING_DIRECTORY
+Environment="GOOGLE_APPLICATION_CREDENTIALS=$WORKING_DIRECTORY/gconfig.json"
 Restart=always
 User=$USERNAME
 
