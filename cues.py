@@ -35,19 +35,41 @@ audio_received_dict = {cue: idx for idx, cue in enumerate(audio_received_cues, 1
 
 
 awaiting_response_cues = [
-    "Let me think...",
-    "One moment, please...",
-    "Hmm, pondering...",
-    "Looking that up for you...",
-    "Just a tiny bit longer...",
-    "Thinking cap on!",
-    "Bear with me...",
-    "Almost got it...",
+    "Ummm...",
+    "Hmm...",
+    "Er...",
+    "Ah...",
+    "Oh...",
+    "Mmm...",
+    "Huh...",
+    "Eh...",
+    "Well...",
+    "Aha...",
     "Let's see...",
-    "Hang on a sec..."
+    "Hang on...",
+    "Wait...",
+    "Thinking...",
+    "Pondering...",
+    "Uh-huh...",
+    "Erm..."
 ]
 
 awaiting_response_dict = {cue: idx for idx, cue in enumerate(awaiting_response_cues, 1)}
 
 
-print(awaiting_response_dict)
+
+chat_mode_activated_cues = [
+    "Sure thing! Let's chat away.",
+    "Chat mode is on! What's on your mind?",
+    "Alright! I'm all ears. Let's chat.",
+    "Yay! I love our chat sessions. Go ahead.",
+    "Chat time! Tell me everything.",
+    "Okay! I'm ready for our chat adventure.",
+    "Sounds fun! Let's dive into our chat.",
+    "You got it! Let's chat up a storm.",
+    "Awesome choice! I'm excited to chat with you.",
+    "You said the magic words! Let's chat.",
+    "You've got my full attention. Let's chat!"
+]
+
+chat_mode_activated_dict = {cue: idx for idx, cue in enumerate(chat_mode_activated_cues, 1)}

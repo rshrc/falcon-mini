@@ -27,7 +27,7 @@ import intents
 from config import get_configuration, read_config, DeviceConfig
 from cues import (audio_received_cues, audio_received_dict,
                         awaiting_response_cues, awaiting_response_dict,
-                        wake_word_cues, wake_word_dict)
+                        wake_word_cues, wake_word_dict, chat_mode_activated_dict, chat_mode_activated_cues)
 from measure import timing
 from voice import TextToSpeechPlayer, output_voice, play_audio
 
@@ -54,6 +54,8 @@ WAKE_WORD = os.getenv('WAKE_WORD').lower()
 
 test_device_uuid = "5caa2cef-3411-4368-9a6d-f9eefe9c34f9"
 
+CHAT_MODE = False
+
 
 # Configure Device etc
 configuration = get_configuration(BASE_URL, test_device_uuid)
@@ -67,7 +69,7 @@ elif isinstance(configuration, DeviceConfig):
 
     MEMORY_CONTEXT = configuration.memory.context_limit
 
-    print(f"Line 65 {MEMORY_CONTEXT}")
+    print(f"Memory Context {MEMORY_CONTEXT}")
 else:
     print("Unexpected type of configuration data.")
 
@@ -217,6 +219,8 @@ def voice_filler():
 @timing
 async def interact():
 
+    global CHAT_MODE
+
     with sr.Microphone() as source:
         try:
             recognizer.adjust_for_ambient_noise(source, duration=1)
@@ -249,32 +253,48 @@ async def interact():
                         audio).lower()
                     print(f"Recognized Text : {recognized_text}")
 
-                    wake_word = fuzz.partial_ratio(recognized_text, WAKE_WORD)
-                    yes_wake_word = fuzz.partial_ratio(
-                        recognized_text, f"hey panda")
+                    words = recognized_text.split()
 
-                    print(f"Wake Word Spoken: {wake_word}")
+                    if len(words) >= 2:
+                        first_two_words = " ".join(words[:2])
+                        wake_word_match = fuzz.partial_ratio(first_two_words, WAKE_WORD)
+                    else:
+                        wake_word_match = 0  
 
-                    if wake_word > 70:
-                        if recognized_text.lower().startswith(WAKE_WORD) and len(recognized_text) == len(WAKE_WORD):
+                    if len(words) >= 4:
+                        next_two_words = " ".join(words[2:4])
+                        lets_chat_match = fuzz.partial_ratio(next_two_words, "let's chat")
+                    else:
+                        lets_chat_match = 0  
+
+                    print(f"Wake Word Spoken: {wake_word_match}")
+
+                    if wake_word_match > 70:
+                        if lets_chat_match:
+                            chat_mode_cue = random.choice(chat_mode_activated_cues)
+                            display_controller.render_text_threaded_v2(chat_mode_cue)
+                            tts.load_and_play(f"{os.getcwd()}/assets/voice_cues/chat_mode_cues/{chat_mode_activated_dict[chat_mode_cue]}.mp3")
+                            
                             while True:
                                 print("Preparing for Audio I/O")
 
                                 print("Listening for second command!")
-                                display_controller.render_text_threaded_v2(
-                                    voice_filler())
+                                
                                 audio = recognizer.listen(source)
-                                display_controller.render_text_threaded_v2(
-                                    "Ummm...")
+                            
                                 print("Resuming Conversation")
-
-                                recognized_text = recognizer.recognize_google(
+                                try:
+                                    recognized_text = recognizer.recognize_google(
                                     audio)
 
-                                print(
+                                    print(
                                     f"Recognized Instruction : {recognized_text}")
-
-                                await process_input(recognized_text)
+                                
+                                
+                                    await process_input(recognized_text)
+                                except Exception as e:
+                                    print(f"Recognition Failed : {e}")
+                                
 
                         else:
                             command = recognized_text.lower().replace(WAKE_WORD, "").strip()
