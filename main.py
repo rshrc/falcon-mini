@@ -11,6 +11,8 @@ import subprocess
 import random
 import signal
 
+import gc
+
 import requests as r
 import speech_recognition as sr
 from dotenv import load_dotenv
@@ -55,6 +57,7 @@ WAKE_WORD = os.getenv('WAKE_WORD').lower()
 test_device_uuid = "5caa2cef-3411-4368-9a6d-f9eefe9c34f9"
 
 CHAT_MODE = False
+ASK_FOR_WAKE_WORD = True
 
 
 # Configure Device etc
@@ -220,6 +223,7 @@ def voice_filler():
 async def interact():
 
     global CHAT_MODE
+    global ASK_FOR_WAKE_WORD
 
     with sr.Microphone() as source:
         try:
@@ -231,13 +235,16 @@ async def interact():
 
             if listen:
                 print("Listening for Wake Word")
-                wake_word_cue = random.choice(wake_word_cues)
-                # tts.text_to_speech(wake_word_cue, "wake_word_cue.mp3")
-                display_controller.render_text_threaded_v2(wake_word_cue)
-                tts.load_and_play(
-                    f"{os.getcwd()}/assets/voice_cues/wake_word_cues/{wake_word_dict[wake_word_cue]}.mp3")
-                # tts.play(f"voice_cues/wake_word_cues/{wake_word_dict[wake_word_cue]}")
 
+                if ASK_FOR_WAKE_WORD:
+                    wake_word_cue = random.choice(wake_word_cues)
+                    # tts.text_to_speech(wake_word_cue, "wake_word_cue.mp3")
+                    display_controller.render_text_threaded_v2(wake_word_cue)
+                    tts.load_and_play(
+                    f"{os.getcwd()}/assets/voice_cues/wake_word_cues/{wake_word_dict[wake_word_cue]}.mp3")
+                    # tts.play(f"voice_cues/wake_word_cues/{wake_word_dict[wake_word_cue]}")
+                
+                ASK_FOR_WAKE_WORD = False
                 audio = recognizer.listen(source)
                 # audio_received_cue = random.choice(audio_received_cues)
                 # tts.text_to_speech(audio_received_cue, "audio_received_cue.mp3")
@@ -279,20 +286,30 @@ async def interact():
                                 print("Preparing for Audio I/O")
 
                                 print("Listening for second command!")
-                                
-                                audio = recognizer.listen(source)
+
+                                audio = recognizer.listen(source, timeout=3)
                             
                                 print("Resuming Conversation")
                                 try:
+                                
                                     recognized_text = recognizer.recognize_google(
                                     audio)
+
+                                    print("Line 298")
+
+                                    if fuzz.partial_ratio(recognized_text, "stop chat") > 70:
+                                        print("We reached fuzz")
+                                        ASK_FOR_WAKE_WORD = True
+                                        break
 
                                     print(
                                     f"Recognized Instruction : {recognized_text}")
                                 
                                 
                                     await process_input(recognized_text)
+                                    gc.collect()
                                 except Exception as e:
+                                    gc.collect()
                                     print(f"Recognition Failed : {e}")
                                 
 
@@ -305,8 +322,8 @@ async def interact():
                         pass
                         print(f"Keep Sleeping")
                 except Exception as e:
-                    display_controller.render_text_threaded_v2(
-                        "Something happened?")
+                    # display_controller.render_text_threaded_v2(
+                    #     "Something happened?")
                     print(f"Some Error Occoured : {e}")
         except Exception as e:
             display_controller.render_text_threaded_v2("I heard some noise")
