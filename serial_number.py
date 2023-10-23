@@ -5,8 +5,10 @@ def get_serial_number():
                 return line.split(':')[1].strip()
     return None
 
-serial_number = get_serial_number()
-if serial_number:
-    print(f"Serial Number: {serial_number}")
-else:
-    print("Serial Number not found.")
+
+if __name__=='__main__':
+    serial_number = get_serial_number()
+    if serial_number:
+        print(f"Serial Number: {serial_number}")
+    else:
+        print("Serial Number not found.")

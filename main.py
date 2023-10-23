@@ -10,6 +10,7 @@ os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = f"{os.getcwd()}/gconfig.json"
 import subprocess
 import random
 import signal
+from serial_number import get_serial_number, serial_number
 
 import gc
 
@@ -45,6 +46,10 @@ ic = IceCreamDebugger()
 os.environ['ALSA_WARNINGS'] = '0'
 
 IDENTIFIER = read_config()['user']['id']
+
+headers = {
+    'X-Device-Serial': get_serial_number()
+}
 
 tts = TextToSpeechPlayer()
 
@@ -93,9 +98,6 @@ def check_similar_song(user_input: str, directory_path: str):
 
     # Iterate over files in the directory directly
     for filename in os.listdir(directory_path):
-        # Check if the file is an audio file (based on extension, for example)
-        # You can adjust this condition based on your requirements
-        # Add other audio extensions if needed
         if filename.endswith('.mp3') or filename.endswith('.wav'):
             ratio = fuzz.partial_ratio(user_input.lower(), filename.lower())
             if ratio > best_match_ratio:
@@ -190,7 +192,9 @@ async def process_input(recognized_text):
         return
     else:
         data = {
-            'input': recognized_text, 'child_id': IDENTIFIER,
+            'input': recognized_text, 
+            'child_id': IDENTIFIER, 
+            'serial_number': serial_number,
         }
 
         print(data)
@@ -202,7 +206,7 @@ async def process_input(recognized_text):
 
         print(f"POST DATA {data}")
 
-        response = r.post(API_URL, json=data)
+        response = r.post(API_URL, json=data, headers=headers)
 
         print(response.status_code)
 
