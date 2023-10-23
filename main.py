@@ -10,7 +10,7 @@ os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = f"{os.getcwd()}/gconfig.json"
 import subprocess
 import random
 import signal
-from serial_number import get_serial_number, serial_number
+from serial_number import get_serial_number
 
 import gc
 
@@ -194,7 +194,6 @@ async def process_input(recognized_text):
         data = {
             'input': recognized_text, 
             'child_id': IDENTIFIER, 
-            'serial_number': serial_number,
         }
 
         print(data)
