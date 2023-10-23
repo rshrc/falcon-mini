@@ -125,8 +125,8 @@ def play_audio(audio_path: str):
 
 if __name__=="__main__":
     player = TextToSpeechPlayer()
-    # player.cues_to_audio_files(wake_word_dict, "wake_word_cues")
+    player.cues_to_audio_files(wake_word_dict, "wake_word_cues")
     # player.cues_to_audio_files(audio_received_dict, "audio_received_cues")
-    player.cues_to_audio_files(awaiting_response_dict, "awaiting_response_cues")
+    # player.cues_to_audio_files(awaiting_response_dict, "awaiting_response_cues")
     # player.cues_to_audio_files(chat_mode_activated_dict, "chat_mode_cues")
 

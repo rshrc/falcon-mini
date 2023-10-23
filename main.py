@@ -262,22 +262,24 @@ async def interact():
 
                     words = recognized_text.split()
 
-                    if len(words) >= 2:
+                    wake_word_match = 0
+                    lets_chat_match = 0
+
+                    lets_chat_match = fuzz.partial_ratio(recognized_text, "let's chat")
+
+                    # If "let's chat" isn't recognized, check for wake word in the first two words
+                    if lets_chat_match <= 70 and len(words) >= 2:
                         first_two_words = " ".join(words[:2])
                         wake_word_match = fuzz.partial_ratio(first_two_words, WAKE_WORD)
-                    else:
-                        wake_word_match = 0  
+                        
+                        # If wake word is found and there are four or more words, 
+                        # check words 3 and 4 for "let's chat"
+                        if wake_word_match > 70 and len(words) >= 4:
+                            next_two_words = " ".join(words[2:4])
+                            lets_chat_match = fuzz.partial_ratio(next_two_words, "let's chat")
 
-                    if len(words) >= 4:
-                        next_two_words = " ".join(words[2:4])
-                        lets_chat_match = fuzz.partial_ratio(next_two_words, "let's chat")
-                    else:
-                        lets_chat_match = 0  
-
-                    print(f"Wake Word Spoken: {wake_word_match}")
-
-                    if wake_word_match > 70:
-                        if lets_chat_match:
+                    if wake_word_match > 70 or lets_chat_match > 70:
+                        if lets_chat_match > 70:
                             chat_mode_cue = random.choice(chat_mode_activated_cues)
                             display_controller.render_text_threaded_v2(chat_mode_cue)
                             tts.load_and_play(f"{os.getcwd()}/assets/voice_cues/chat_mode_cues/{chat_mode_activated_dict[chat_mode_cue]}.mp3")
@@ -304,7 +306,6 @@ async def interact():
 
                                     print(
                                     f"Recognized Instruction : {recognized_text}")
-                                
                                 
                                     await process_input(recognized_text)
                                     gc.collect()
