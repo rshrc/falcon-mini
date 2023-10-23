@@ -235,11 +235,11 @@ async def interact():
                 # tts.play(f"voice_cues/wake_word_cues/{wake_word_dict[wake_word_cue]}")
 
                 audio = recognizer.listen(source)
-                audio_received_cue = random.choice(audio_received_cues)
+                # audio_received_cue = random.choice(audio_received_cues)
                 # tts.text_to_speech(audio_received_cue, "audio_received_cue.mp3")
-                display_controller.render_text_threaded_v2(audio_received_cue)
-                tts.load_and_play(
-                    f"{os.getcwd()}/assets/voice_cues/audio_received_cues/{audio_received_dict[audio_received_cue]}.mp3", use_thread=True)
+                # display_controller.render_text_threaded_v2(audio_received_cue)
+                # tts.load_and_play(
+                #   f"{os.getcwd()}/assets/voice_cues/audio_received_cues/{audio_received_dict[audio_received_cue]}.mp3", use_thread=True)
                 # play(f"voice_cues/audio_received_cues/{audio_received_dict[audio_received_cue]}")
 
                 print("There was some audio input!")
