@@ -51,7 +51,6 @@ headers = {
     'X-Device-Serial': get_serial_number()
 }
 
-tts = TextToSpeechPlayer()
 
 load_dotenv()
 
@@ -67,6 +66,11 @@ ASK_FOR_WAKE_WORD = True
 
 # Configure Device etc
 configuration = get_configuration(BASE_URL, test_device_uuid)
+
+print(f"Line 71 : {configuration}")
+
+# sys.exit()
+tts = TextToSpeechPlayer(configuration.voice.url)
 
 MEMORY_CONTEXT = 0
 
@@ -215,7 +219,7 @@ async def process_input(recognized_text):
         # print(f"Response : {conversation}")
         display_controller.render_text_threaded_v2(speech)
         # await output_voice(speech)
-        tts.text_to_speech(speech, "output.mp3")
+        tts.play(speech, headers)
 
 
 def voice_filler():

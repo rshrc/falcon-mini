@@ -3,7 +3,7 @@ import os
 import threading
 import time
 from tempfile import TemporaryFile
-
+import requests as r
 from google.cloud import texttospeech
 from gtts import gTTS
 from measure import timing
@@ -15,8 +15,9 @@ from cues import (audio_received_dict, awaiting_response_dict,
 
 
 class TextToSpeechPlayer:
-    def __init__(self):
+    def __init__(self, url):
         self.client = texttospeech.TextToSpeechClient()
+        self.url = url
 
     def synthesize_speech(self, text, output_filename):
         start_time = time.time()
@@ -83,6 +84,30 @@ class TextToSpeechPlayer:
             self.synthesize_speech(cue, filepath)
 
             print(f"Saved '{cue}' to {filepath}")
+
+
+    def play(self, text, headers):
+        # Make a request to the Django API endpoint to get synthesized audio
+        response = r.post(
+            self.url,
+            json={"text": text},
+            headers=headers,
+        )
+
+        # Check if the request was successful
+        if response.status_code == 200:
+            output_filename = "output.mp3"
+            
+            # Write the audio data to a temporary file
+            with open(output_filename, "wb") as file:
+                file.write(response.content)
+            
+            # Load and play the audio
+            self.load_and_play(output_filename)
+        
+        else:
+            print(f"Failed to get audio. Status code: {response.status_code}. Message: {response.text}")
+
 
 @timing
 async def output_voicev2(text: str, expect_return=False):
