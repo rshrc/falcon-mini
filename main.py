@@ -30,7 +30,7 @@ import intents
 from config import get_configuration, read_config, DeviceConfig
 from cues import (audio_received_cues, audio_received_dict,
                         awaiting_response_cues, awaiting_response_dict,
-                        wake_word_cues, wake_word_dict, chat_mode_activated_dict, chat_mode_activated_cues)
+                        wake_word_cues, wake_word_dict, chat_mode_activated_dict, chat_mode_activated_cues, stop_chat_dict, stop_chat_cues)
 from measure import timing
 from voice import TextToSpeechPlayer, output_voice, play_audio
 
@@ -304,10 +304,11 @@ async def interact():
                                     recognized_text = recognizer.recognize_google(
                                     audio)
 
-                                    print("Line 298")
-
                                     if fuzz.partial_ratio(recognized_text, "stop chat") > 70:
                                         print("We reached fuzz")
+                                        stop_chat_cue = random.choice(stop_chat_cues)
+                                        display_controller.render_text_threaded_v2(stop_chat_cue)
+                                        tts.load_and_play(f"{os.getcwd()}/assets/voice_cues/stop_chat_cues/{stop_chat_dict[stop_chat_cue]}.mp3")
                                         ASK_FOR_WAKE_WORD = True
                                         break
 

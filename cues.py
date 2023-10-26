@@ -73,3 +73,18 @@ chat_mode_activated_cues = [
 ]
 
 chat_mode_activated_dict = {cue: idx for idx, cue in enumerate(chat_mode_activated_cues, 1)}
+
+stop_chat_cues = [
+    "Chat's on break!",
+    "Taking a pause!",
+    "Chat nap time!",
+    "See you soon!",
+    "Chat time-out!",
+    "Break time, buddy!",
+    "Chat's resting!",
+    "Later, friend!",
+    "Tiny chat break!",
+    "Be back soon!"
+]
+
+stop_chat_dict = {cue: idx for idx, cue in enumerate(stop_chat_cues, 1)}
