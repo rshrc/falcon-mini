@@ -9,6 +9,8 @@ import time
 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = f"{os.getcwd()}/gconfig.json"
 import subprocess
 import random
+from datetime import datetime
+
 import signal
 from logging.handlers import RotatingFileHandler
 from utils import get_last_n
@@ -35,11 +37,28 @@ from cues import (audio_received_cues, audio_received_dict,
 from measure import timing
 from voice import TextToSpeechPlayer, output_voice, play_audio
 import logging
+from logging.handlers import RotatingFileHandler
 
-logging.basicConfig(level=logging.INFO, filename='falcon_mini.log', filemode='a', format='%(asctime)s - %(levelname)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
-handler = RotatingFileHandler('falcon_mini.log', maxBytes=5*1024*1024, backupCount=3)
+# Create a logger
 logger = logging.getLogger()
 
+# Set the log level
+logger.setLevel(logging.INFO)
+
+# Define the log format
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+
+# Create the RotatingFileHandler
+handler = RotatingFileHandler('falcon_mini.log', maxBytes=5*1024*1024, backupCount=3)
+
+# Set the formatter for the handler
+handler.setFormatter(formatter)
+
+# Clear any existing handlers (to avoid duplicate logs)
+for h in logger.handlers[:]:
+    logger.removeHandler(h)
+
+# Add the rotating handler to the logger
 logger.addHandler(handler)
 
 def increase_volume():
@@ -343,7 +362,7 @@ async def interact():
 
 @timing
 async def main():
-    logger.info("Falcon Mini Booted")
+    logger.info(f"Falcon Mini Booted at {datetime.now().strftime('%A, %B %d, %Y, %H:%M:%S')}")
     parser = argparse.ArgumentParser(
         description="Process input and optionally generate output audio.")
     parser.add_argument("-O", "--output", dest="output_text",
