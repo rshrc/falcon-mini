@@ -24,4 +24,14 @@ def get_last_n_days(n=5):
 def get_last_n(n=5):
     with Session() as session:
         data = session.query(Conversation).order_by(Conversation.created_at.desc()).limit(n).all()
-        return data
+        
+        json_data = []
+        for item in data:
+            assistant_data = {'role': 'assistant', 'content': item.output_text}
+            user_data = {'role': 'user', 'content': item.input_text}
+            json_data.extend([assistant_data, user_data])
+        
+        return list(reversed(json_data))
+
+if __name__=='__main__':
+    print(get_last_n())

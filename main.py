@@ -11,7 +11,7 @@ import subprocess
 import random
 import signal
 from logging.handlers import RotatingFileHandler
-
+from utils import get_last_n
 from serial_number import get_serial_number
 
 import gc
@@ -149,19 +149,25 @@ async def process_input(recognized_text):
 
         if stop_intent and any(pos == "VB" for word, pos in tagged_tokens):
             stop_intent = False
+        x = "what did we talk about today"
+        logger.info(f"Asked For Summarization : {fuzz.partial_ratio(recognized_text, x)}")
+        summarize_intent = fuzz.partial_ratio(recognized_text, "what did we talk about today") > 70 or fuzz.partial_ratio(recognized_text, "summarize our conversation today") > 70
 
     except Exception as e:
         play_intent = False
         stop_intent = False
+        summarize_intent = False
+        logger.warning(f"Failed Parsing NLP with {e}")
 
     logger.info(f"Play Intent -> {play_intent}")
     logger.info(f"Stop Intent -> {stop_intent}")
+    logger.info(f"Summarize Intent -> {summarize_intent}")
 
     if play_intent:
         similar_song_found, song_path = check_similar_song(
             recognized_text, 'audio_files/')
-        print(
-            f"Similar Song Found ? {similar_song_found} and Path {song_path}")
+        logger.info(
+            f"Similar Song = {similar_song_found} and Path {song_path}")
 
         if song_path is not None:
             play_audio(song_path)
@@ -176,14 +182,37 @@ async def process_input(recognized_text):
     elif stop_intent:
         await output_voice("Sure thing! Stopping")
         return
+    elif summarize_intent:
+        logger.info(f"Summarize Intent Triggered via {recognized_text}")
+
+        data = {
+            'input': recognized_text,
+            'child_id': IDENTIFIER,
+        }
+
+        conversation = get_last_n(MEMORY_CONTEXT)
+
+        try:
+            response = r.post(API_URL, json=data, headers=headers)
+
+            logger.info(f"AI TALK API RESPONSE {response.status_code}")
+
+            speech = response.json()['response']
+            update_conversation(recognized_text, speech)
+
+            display_controller.render_text_threaded_v2(speech)
+            tts.play(speech, headers)
+        except Exception as e:
+            logger.warning(f"API Call Fail with {data} & {e}")
     else:
         data = {
             'input': recognized_text, 
             'child_id': IDENTIFIER, 
         }
 
-        if False and len(conversation) > 0:
-            data['conversation'] = json.dumps(conversation[:MEMORY_CONTEXT])
+        conversation = get_last_n(5)
+
+        data['conversation'] = json.dumps(conversation)
         
         try:
 
