@@ -154,7 +154,7 @@ async def process_input(recognized_text):
 
         tagged_tokens = pos_tag(tokens)
 
-        token_bigrams = [" ".join(bigram) for bigram in bigrams(tokens)]
+        token_bigrams = [" ".join(bigram) for bigram in bigrams]
 
         play_intent = any(word.lower() in intents.play_keywords for word, pos in tagged_tokens) or \
             any(bigram.lower() in intents.play_keywords for bigram in token_bigrams)
@@ -211,6 +211,9 @@ async def process_input(recognized_text):
 
         conversation = get_last_n(MEMORY_CONTEXT)
 
+        if len(conversation) > 0:
+            data['conversation'] = json.dumps(conversation)
+
         try:
             response = r.post(API_URL, json=data, headers=headers)
 
@@ -228,10 +231,6 @@ async def process_input(recognized_text):
             'input': recognized_text, 
             'child_id': IDENTIFIER, 
         }
-
-        conversation = get_last_n(5)
-
-        data['conversation'] = json.dumps(conversation)
         
         try:
 
