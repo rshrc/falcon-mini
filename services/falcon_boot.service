@@ -1,0 +1,15 @@
+Description=Falcon Boot Service
+After=network-online.target remote-fs.target
+Wants=network-online.target remote-fs.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /home/rishi/falcon_mini/boot_service.py
+Restart=on-failure
+User=root
+Environment="PYTHONPATH=/home/rishi/falcon_mini"
+WorkingDirectory=/home/rishi/falcon_mini
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

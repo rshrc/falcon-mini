@@ -1,0 +1,14 @@
+[Unit]
+Description=Falcon Mini
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/python3 /home/rishi/falcon_mini/main.py
+WorkingDirectory=/home/rishi/falcon_mini
+Environment="GOOGLE_APPLICATION_CREDENTIALS=/home/rishi/falcon_mini/gconfig.json"
+Environment="PYTHONPATH=/home/rishi/falcon_mini"
+Restart=always
+User=rishi
+
+[Install]
+WantedBy=multi-user.target

@@ -10,12 +10,16 @@ os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = f"{os.getcwd()}/gconfig.json"
 import subprocess
 import random
 import signal
+from logging.handlers import RotatingFileHandler
+
+from serial_number import get_serial_number
+
+import gc
 
 import requests as r
 import speech_recognition as sr
 from dotenv import load_dotenv
 from fuzzywuzzy import fuzz
-from icecream.icecream import IceCreamDebugger
 from nltk.tag import pos_tag
 from nltk.tokenize import word_tokenize
 from config import get_configuration
@@ -27,9 +31,16 @@ import intents
 from config import get_configuration, read_config, DeviceConfig
 from cues import (audio_received_cues, audio_received_dict,
                         awaiting_response_cues, awaiting_response_dict,
-                        wake_word_cues, wake_word_dict)
+                        wake_word_cues, wake_word_dict, chat_mode_activated_dict, chat_mode_activated_cues, stop_chat_dict, stop_chat_cues)
 from measure import timing
 from voice import TextToSpeechPlayer, output_voice, play_audio
+import logging
+
+logging.basicConfig(level=logging.INFO, filename='falcon_mini.log', filemode='a', format='%(asctime)s - %(levelname)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+handler = RotatingFileHandler('falcon_mini.log', maxBytes=5*1024*1024, backupCount=3)
+logger = logging.getLogger()
+
+logger.addHandler(handler)
 
 def increase_volume():
     subprocess.call(['sudo', '/home/rishi/falcon_mini/scripts/setup/set_volume.sh'])
@@ -38,13 +49,15 @@ increase_volume()
 
 BPRAP = "voice_cues"
 
-ic = IceCreamDebugger()
 
 os.environ['ALSA_WARNINGS'] = '0'
 
 IDENTIFIER = read_config()['user']['id']
 
-tts = TextToSpeechPlayer()
+headers = {
+    'X-Device-Serial': get_serial_number()
+}
+
 
 load_dotenv()
 
@@ -54,9 +67,12 @@ WAKE_WORD = os.getenv('WAKE_WORD').lower()
 
 test_device_uuid = "5caa2cef-3411-4368-9a6d-f9eefe9c34f9"
 
+CHAT_MODE = False
+ASK_FOR_WAKE_WORD = True
 
-# Configure Device etc
 configuration = get_configuration(BASE_URL, test_device_uuid)
+
+tts = TextToSpeechPlayer(configuration.voice.url)
 
 MEMORY_CONTEXT = 0
 
@@ -67,18 +83,11 @@ elif isinstance(configuration, DeviceConfig):
 
     MEMORY_CONTEXT = configuration.memory.context_limit
 
-    print(f"Line 65 {MEMORY_CONTEXT}")
+    logger.info(f"Memory Context {MEMORY_CONTEXT}")
 else:
-    print("Unexpected type of configuration data.")
+    logger.info("Unexpected type of configuration data.")
 
-# sys.exit()
-
-
-# Number of conversations that are kept track of, depend on get_configuration
-
-# Example Usage:
 display_controller = DisplayController()
-
 
 @timing
 def check_similar_song(user_input: str, directory_path: str):
@@ -88,9 +97,6 @@ def check_similar_song(user_input: str, directory_path: str):
 
     # Iterate over files in the directory directly
     for filename in os.listdir(directory_path):
-        # Check if the file is an audio file (based on extension, for example)
-        # You can adjust this condition based on your requirements
-        # Add other audio extensions if needed
         if filename.endswith('.mp3') or filename.endswith('.wav'):
             ratio = fuzz.partial_ratio(user_input.lower(), filename.lower())
             if ratio > best_match_ratio:
@@ -113,24 +119,11 @@ microphone = sr.Microphone()
 
 @timing
 def update_conversation(input, output):
-
-    # store in DB
     store_data(input, output)
-    
-    # Single Operation Conversation
-    # conversation.extend([
-    #     {'role': 'user', 'content': input},
-    #     {'role': 'assistant', 'content': output}
-    # ])
-    # print("Conversation Updated")
-
 
 @timing
 async def process_input(recognized_text):
-    # doc = nlp(recognized_text)
     awaiting_response_cue = random.choice(awaiting_response_cues)
-    # play(f"voice_cues/awaiting_response_cues/{awaiting_response_dict[awaiting_response_cue]}")
-    # tts.text_to_speech(awaiting_response_cue, "awaiting_response_cue.mp3")
     display_controller.render_text_threaded_v2(awaiting_response_cue)
     tts.load_and_play(
         f"{os.getcwd()}/assets/voice_cues/awaiting_response_cues/{awaiting_response_dict[awaiting_response_cue]}.mp3", use_thread=True)
@@ -161,8 +154,8 @@ async def process_input(recognized_text):
         play_intent = False
         stop_intent = False
 
-    print(f"Play Intent -> {play_intent}")
-    print(f"Stop Intent -> {stop_intent}")
+    logger.info(f"Play Intent -> {play_intent}")
+    logger.info(f"Stop Intent -> {stop_intent}")
 
     if play_intent:
         similar_song_found, song_path = check_similar_song(
@@ -185,29 +178,26 @@ async def process_input(recognized_text):
         return
     else:
         data = {
-            'input': recognized_text, 'child_id': IDENTIFIER,
+            'input': recognized_text, 
+            'child_id': IDENTIFIER, 
         }
 
-        print(data)
-
-        # not gonna take conversation, to reduce token utilization
-        
         if False and len(conversation) > 0:
             data['conversation'] = json.dumps(conversation[:MEMORY_CONTEXT])
+        
+        try:
 
-        print(f"POST DATA {data}")
+            response = r.post(API_URL, json=data, headers=headers)
 
-        response = r.post(API_URL, json=data)
+            logger.info(f"AI TALK API RESPONSE {response.status_code}")
 
-        print(response.status_code)
+            speech = response.json()['response']
+            update_conversation(recognized_text, speech)
 
-        speech = response.json()['response']
-        update_conversation(recognized_text, speech)
-
-        # print(f"Response : {conversation}")
-        display_controller.render_text_threaded_v2(speech)
-        # await output_voice(speech)
-        tts.text_to_speech(speech, "output.mp3")
+            display_controller.render_text_threaded_v2(speech)
+            tts.play(speech, headers)
+        except Exception as e:
+            logger.warning(f"API Call Fail with {data} & {e}")
 
 
 def voice_filler():
@@ -216,65 +206,95 @@ def voice_filler():
 
 @timing
 async def interact():
+    logger.info("Interact Mode Accessed")
+
+    global CHAT_MODE
+    global ASK_FOR_WAKE_WORD
 
     with sr.Microphone() as source:
+        logger.info("Microphone On")
         try:
             recognizer.adjust_for_ambient_noise(source, duration=1)
+            logger.info("Ambience Adjusted")
             recognizer.energy_threshold = 7000
-            print("Energy threshold:", recognizer.energy_threshold)
+            logger.info(f"Energy Threshold Set to {recognizer.energy_threshold}")
 
             listen = True
-
             if listen:
-                print("Listening for Wake Word")
-                wake_word_cue = random.choice(wake_word_cues)
-                # tts.text_to_speech(wake_word_cue, "wake_word_cue.mp3")
-                display_controller.render_text_threaded_v2(wake_word_cue)
-                tts.load_and_play(
+                logger.info("Listening for Wake Word")
+
+                if ASK_FOR_WAKE_WORD:
+                    wake_word_cue = random.choice(wake_word_cues)
+                    display_controller.render_text_threaded_v2(wake_word_cue)
+                    tts.load_and_play(
                     f"{os.getcwd()}/assets/voice_cues/wake_word_cues/{wake_word_dict[wake_word_cue]}.mp3")
-                # tts.play(f"voice_cues/wake_word_cues/{wake_word_dict[wake_word_cue]}")
+                logger.info("User Informed About State")
 
+                ASK_FOR_WAKE_WORD = False
+                start_time = time.time()
+                logger.info("Started Listening")
                 audio = recognizer.listen(source)
-                audio_received_cue = random.choice(audio_received_cues)
-                # tts.text_to_speech(audio_received_cue, "audio_received_cue.mp3")
-                display_controller.render_text_threaded_v2(audio_received_cue)
-                tts.load_and_play(
-                    f"{os.getcwd()}/assets/voice_cues/audio_received_cues/{audio_received_dict[audio_received_cue]}.mp3", use_thread=True)
-                # play(f"voice_cues/audio_received_cues/{audio_received_dict[audio_received_cue]}")
-
-                print("There was some audio input!")
+            
+                logger.info(f"There was some audio input! Time Delta {time.time()-start_time:.2f}")
 
                 try:
                     recognized_text = recognizer.recognize_google(
                         audio).lower()
-                    print(f"Recognized Text : {recognized_text}")
+                    logger.info(f"Recognized Text : {recognized_text}")
 
-                    wake_word = fuzz.partial_ratio(recognized_text, WAKE_WORD)
-                    yes_wake_word = fuzz.partial_ratio(
-                        recognized_text, f"hey panda")
+                    words = recognized_text.split()
 
-                    print(f"Wake Word Spoken: {wake_word}")
+                    wake_word_match = 0
+                    lets_chat_match = 0
 
-                    if wake_word > 70:
-                        if recognized_text.lower().startswith(WAKE_WORD) and len(recognized_text) == len(WAKE_WORD):
+                    lets_chat_match = fuzz.partial_ratio(recognized_text, "let's chat")
+
+                    logger.info(f"Match {recognized_text} and Lets Chat - {lets_chat_match}")
+
+                    if lets_chat_match <= 70 and len(words) >= 2:
+                        logger.info(f"Lets Chat Not Matched: Words Length {len(words)}")
+                        first_two_words = " ".join(words[:2])
+                        wake_word_match = fuzz.partial_ratio(first_two_words, WAKE_WORD)
+                        
+                        if wake_word_match > 70 and len(words) >= 4:
+                            next_two_words = " ".join(words[2:4])
+                            lets_chat_match = fuzz.partial_ratio(next_two_words, "let's chat")
+
+                    if wake_word_match > 70 or lets_chat_match > 70:
+                        logger.info(f"Wake Word Match {wake_word_match} and Lets Chat Match {lets_chat_match}")
+                        if lets_chat_match > 70:
+                            chat_mode_cue = random.choice(chat_mode_activated_cues)
+                            display_controller.render_text_threaded_v2(chat_mode_cue)
+                            tts.load_and_play(f"{os.getcwd()}/assets/voice_cues/chat_mode_cues/{chat_mode_activated_dict[chat_mode_cue]}.mp3")
+                            
                             while True:
-                                print("Preparing for Audio I/O")
 
-                                print("Listening for second command!")
-                                display_controller.render_text_threaded_v2(
-                                    voice_filler())
-                                audio = recognizer.listen(source)
-                                display_controller.render_text_threaded_v2(
-                                    "Ummm...")
-                                print("Resuming Conversation")
-
-                                recognized_text = recognizer.recognize_google(
+                                logger.info("Listening for second command!")
+                                start_time = time.time()
+                                audio = recognizer.listen(source, timeout=3)
+                            
+                                logger.info(f"Resuming Conversation - {time.time() - start_time:2f}")
+                                try:
+                                
+                                    recognized_text = recognizer.recognize_google(
                                     audio)
 
-                                print(
-                                    f"Recognized Instruction : {recognized_text}")
+                                    logger.info(f"Recognized Text : {recognized_text}")
 
-                                await process_input(recognized_text)
+                                    if fuzz.partial_ratio(recognized_text, "stop chat") > 70:
+                                        logger.info("Stop Chat Command Received")
+                                        stop_chat_cue = random.choice(stop_chat_cues)
+                                        display_controller.render_text_threaded_v2(stop_chat_cue)
+                                        tts.load_and_play(f"{os.getcwd()}/assets/voice_cues/stop_chat_cues/{stop_chat_dict[stop_chat_cue]}.mp3")
+                                        ASK_FOR_WAKE_WORD = True
+                                        break
+                                
+                                    await process_input(recognized_text)
+                                    gc.collect()
+                                except Exception as e:
+                                    gc.collect()
+                                    logger.warning(f"Recognition Failed : {e}")
+                                
 
                         else:
                             command = recognized_text.lower().replace(WAKE_WORD, "").strip()
@@ -283,21 +303,18 @@ async def interact():
 
                     else:
                         pass
-                        print(f"Keep Sleeping")
+                        logger.warning(f"False Trigger! Keep Sleeping!")
                 except Exception as e:
-                    display_controller.render_text_threaded_v2(
-                        "Something happened?")
-                    print(f"Some Error Occoured : {e}")
+                    
+                    logger.warning(f"Some Error Occoured : {e}")
         except Exception as e:
             display_controller.render_text_threaded_v2("I heard some noise")
-            print(f"Something Crashed {e}")
+            logger.warning(f"False Wake Up! Keep Sleeping! {e}")
 
 
 @timing
 async def main():
-    # while True:
-    #     ic("I am running indeed")
-    #     time.sleep(1)
+    logger.info("Falcon Mini Booted")
     parser = argparse.ArgumentParser(
         description="Process input and optionally generate output audio.")
     parser.add_argument("-O", "--output", dest="output_text",
@@ -309,23 +326,8 @@ async def main():
         print(f"Output {args.output_text}")
         await output_voice(args.output_text)
     else:
-        # load data.yaml config file
         while True:
             await interact()
-
-
-# def cleanup():
-#     display_controller.render_text_threaded_v2("Not Running...")
-#     print("Cleaning up before exiting...")
-
-
-# def exit_handler():
-#     cleanup()
-
-
-# atexit.register(exit_handler)
-# signal.signal(signal.SIGINT, exit_handler)
-# signal.signal(signal.SIGNINT, exit_handler)
 
 if __name__ == "__main__":
     asyncio.run(main())

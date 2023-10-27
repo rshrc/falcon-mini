@@ -46,6 +46,10 @@ class Memory:
     context_limit: int
 
 @dataclass
+class Voice:
+    url: str
+
+@dataclass
 class DeviceConfig:
     user_info: UserInfo
     subscription_info: SubscriptionInfo
@@ -53,6 +57,7 @@ class DeviceConfig:
     google_cloud_security_file: GoogleCloudSecurityFile
     update_info: UpdateInfo
     memory: Memory
+    voice: Voice
 
     @classmethod
     def from_dict(cls, data: dict):
@@ -64,7 +69,9 @@ class DeviceConfig:
             api_limits=APILimits(**data['api_limits']),
             google_cloud_security_file=GoogleCloudSecurityFile(**data['google_cloud_security_file']),
             update_info=UpdateInfo(**data['update_info']),
-            memory=Memory(**data['memory'])
+            memory=Memory(**data['memory']),
+            voice=Voice(**data['voice']) 
+
         )
 
     def to_dict(self):
@@ -74,8 +81,11 @@ class DeviceConfig:
             "api_limits": asdict(self.api_limits),
             "google_cloud_security_file": asdict(self.google_cloud_security_file),
             "update_info": asdict(self.update_info),
-            "memory": asdict(self.memory)
+            "memory": asdict(self.memory),
+            "voice": asdict(self.voice) 
+
         }
+
 
 
 def get_configuration(url: str, device_uuid: Union[str, None]) -> Union[str, DeviceConfig]:
