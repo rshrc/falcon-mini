@@ -37,21 +37,14 @@ audio_received_dict = {cue: idx for idx, cue in enumerate(audio_received_cues, 1
 awaiting_response_cues = [
     "Ummm...",
     "Hmm...",
-    "Er...",
-    "Ah...",
-    "Oh...",
     "Mmm...",
     "Huh...",
-    "Eh...",
     "Well...",
-    "Aha...",
     "Let's see...",
     "Hang on...",
     "Wait...",
     "Thinking...",
     "Pondering...",
-    "Uh-huh...",
-    "Erm..."
 ]
 
 awaiting_response_dict = {cue: idx for idx, cue in enumerate(awaiting_response_cues, 1)}
