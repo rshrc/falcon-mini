@@ -1,3 +1,29 @@
+from voice import TextToSpeechPlayer, output_voice, play_audio
+from utils import get_last_n, store_data
+from serial_number import get_serial_number
+from measure import timing
+from disply_lib import DisplayController
+from cues import (audio_received_cues, audio_received_dict,
+                  awaiting_response_cues, awaiting_response_dict,
+                  chat_mode_activated_cues, chat_mode_activated_dict,
+                  stop_chat_cues, stop_chat_dict, wake_word_cues,
+                  wake_word_dict)
+from config import DeviceConfig, get_configuration, read_config
+import intents
+from nltk.tokenize import word_tokenize
+from nltk.tag import pos_tag
+from fuzzywuzzy import fuzz
+from dotenv import load_dotenv
+import speech_recognition as sr
+import requests as r
+from logging.handlers import RotatingFileHandler
+from datetime import datetime
+import traceback
+import subprocess
+import signal
+import random
+import logging
+import gc
 import argparse
 import asyncio
 import atexit
@@ -6,38 +32,11 @@ import multiprocessing
 import os
 import sys
 import time
+
 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = f"{os.getcwd()}/gconfig.json"
-import subprocess
-import random
-from datetime import datetime
 
-import signal
-from logging.handlers import RotatingFileHandler
-from utils import get_last_n
-from serial_number import get_serial_number
-
-import gc
-
-import requests as r
-import speech_recognition as sr
-from dotenv import load_dotenv
-from fuzzywuzzy import fuzz
-from nltk.tag import pos_tag
-from nltk.tokenize import word_tokenize
-from config import get_configuration
-from utils import store_data, get_last_n
 
 # from db.utils import get_data_in_date_range, get_last_n, store_data
-from disply_lib import DisplayController
-import intents
-from config import get_configuration, read_config, DeviceConfig
-from cues import (audio_received_cues, audio_received_dict,
-                        awaiting_response_cues, awaiting_response_dict,
-                        wake_word_cues, wake_word_dict, chat_mode_activated_dict, chat_mode_activated_cues, stop_chat_dict, stop_chat_cues)
-from measure import timing
-from voice import TextToSpeechPlayer, output_voice, play_audio
-import logging
-from logging.handlers import RotatingFileHandler
 
 # Create a logger
 logger = logging.getLogger()
@@ -46,10 +45,12 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 # Define the log format
-formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+formatter = logging.Formatter(
+    '%(asctime)s - %(levelname)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 
 # Create the RotatingFileHandler
-handler = RotatingFileHandler('falcon_mini.log', maxBytes=5*1024*1024, backupCount=3)
+handler = RotatingFileHandler(
+    'falcon_mini.log', maxBytes=5*1024*1024, backupCount=3)
 
 # Set the formatter for the handler
 handler.setFormatter(formatter)
@@ -61,8 +62,11 @@ for h in logger.handlers[:]:
 # Add the rotating handler to the logger
 logger.addHandler(handler)
 
+
 def increase_volume():
-    subprocess.call(['sudo', '/home/rishi/falcon_mini/scripts/setup/set_volume.sh'])
+    subprocess.call(
+        ['sudo', '/home/rishi/falcon_mini/scripts/setup/set_volume.sh'])
+
 
 increase_volume()
 
@@ -110,6 +114,7 @@ else:
 
 display_controller = DisplayController()
 
+
 @timing
 def check_similar_song(user_input: str, directory_path: str):
     print("Using V1 Search Algorithm")
@@ -142,6 +147,7 @@ microphone = sr.Microphone()
 def update_conversation(input, output):
     store_data(input, output)
 
+
 @timing
 async def process_input(recognized_text):
     awaiting_response_cue = random.choice(awaiting_response_cues)
@@ -171,8 +177,10 @@ async def process_input(recognized_text):
         if stop_intent and any(pos == "VB" for word, pos in tagged_tokens):
             stop_intent = False
         x = "what did we talk about today"
-        logger.info(f"Asked For Summarization : {fuzz.partial_ratio(recognized_text, x)}")
-        summarize_intent = fuzz.partial_ratio(recognized_text, "what did we talk about today") > 70 or fuzz.partial_ratio(recognized_text, "summarize our conversation today") > 70
+        logger.info(
+            f"Asked For Summarization : {fuzz.partial_ratio(recognized_text, x)}")
+        summarize_intent = fuzz.partial_ratio(recognized_text, "what did we talk about today") > 70 or fuzz.partial_ratio(
+            recognized_text, "summarize our conversation today") > 70
 
     except Exception as e:
         play_intent = False
@@ -230,10 +238,10 @@ async def process_input(recognized_text):
             logger.warning(f"API Call Fail with {data} & {e}")
     else:
         data = {
-            'input': recognized_text, 
-            'child_id': IDENTIFIER, 
+            'input': recognized_text,
+            'child_id': IDENTIFIER,
         }
-        
+
         try:
 
             response = r.post(API_URL, json=data, headers=headers)
@@ -266,7 +274,8 @@ async def interact():
             recognizer.adjust_for_ambient_noise(source, duration=1)
             logger.info("Ambience Adjusted")
             recognizer.energy_threshold = 7000
-            logger.info(f"Energy Threshold Set to {recognizer.energy_threshold}")
+            logger.info(
+                f"Energy Threshold Set to {recognizer.energy_threshold}")
 
             listen = True
             if listen:
@@ -276,15 +285,16 @@ async def interact():
                     wake_word_cue = random.choice(wake_word_cues)
                     display_controller.render_text_threaded_v2(wake_word_cue)
                     tts.load_and_play(
-                    f"{os.getcwd()}/assets/voice_cues/wake_word_cues/{wake_word_dict[wake_word_cue]}.mp3")
+                        f"{os.getcwd()}/assets/voice_cues/wake_word_cues/{wake_word_dict[wake_word_cue]}.mp3")
                 logger.info("User Informed About State")
 
                 ASK_FOR_WAKE_WORD = False
                 start_time = time.time()
                 logger.info("Started Listening")
                 audio = recognizer.listen(source)
-            
-                logger.info(f"There was some audio input! Time Delta {time.time()-start_time:.2f}")
+
+                logger.info(
+                    f"There was some audio input! Time Delta {time.time()-start_time:.2f}")
 
                 try:
                     recognized_text = recognizer.recognize_google(
@@ -296,54 +306,69 @@ async def interact():
                     wake_word_match = 0
                     lets_chat_match = 0
 
-                    lets_chat_match = fuzz.partial_ratio(recognized_text, "let's chat")
+                    lets_chat_match = fuzz.partial_ratio(
+                        recognized_text, "let's chat")
 
-                    logger.info(f"Match {recognized_text} and Lets Chat - {lets_chat_match}")
+                    logger.info(
+                        f"Match {recognized_text} and Lets Chat - {lets_chat_match}")
 
                     if lets_chat_match <= 70 and len(words) >= 2:
-                        logger.info(f"Lets Chat Not Matched: Words Length {len(words)}")
+                        logger.info(
+                            f"Lets Chat Not Matched: Words Length {len(words)}")
                         first_two_words = " ".join(words[:2])
-                        wake_word_match = fuzz.partial_ratio(first_two_words, WAKE_WORD)
-                        
+                        wake_word_match = fuzz.partial_ratio(
+                            first_two_words, WAKE_WORD)
+
                         if wake_word_match > 70 and len(words) >= 4:
                             next_two_words = " ".join(words[2:4])
-                            lets_chat_match = fuzz.partial_ratio(next_two_words, "let's chat")
+                            lets_chat_match = fuzz.partial_ratio(
+                                next_two_words, "let's chat")
 
                     if wake_word_match > 70 or lets_chat_match > 70:
-                        logger.info(f"Wake Word Match {wake_word_match} and Lets Chat Match {lets_chat_match}")
+                        logger.info(
+                            f"Wake Word Match {wake_word_match} and Lets Chat Match {lets_chat_match}")
                         if lets_chat_match > 70:
-                            chat_mode_cue = random.choice(chat_mode_activated_cues)
-                            display_controller.render_text_threaded_v2(chat_mode_cue)
-                            tts.load_and_play(f"{os.getcwd()}/assets/voice_cues/chat_mode_cues/{chat_mode_activated_dict[chat_mode_cue]}.mp3")
-                            
+                            chat_mode_cue = random.choice(
+                                chat_mode_activated_cues)
+                            display_controller.render_text_threaded_v2(
+                                chat_mode_cue)
+                            tts.load_and_play(
+                                f"{os.getcwd()}/assets/voice_cues/chat_mode_cues/{chat_mode_activated_dict[chat_mode_cue]}.mp3")
+
                             while True:
 
                                 logger.info("Listening for second command!")
                                 start_time = time.time()
-                                audio = recognizer.listen(source, timeout=3, phrase_time_limit=PHRASE_TIME_LIMIT)
-                            
-                                logger.info(f"Resuming Conversation - {time.time() - start_time:2f}")
-                                try:
-                                
-                                    recognized_text = recognizer.recognize_google(
-                                    audio)
+                                audio = recognizer.listen(
+                                    source, timeout=3, phrase_time_limit=PHRASE_TIME_LIMIT)
 
-                                    logger.info(f"Recognized Text : {recognized_text}")
+                                logger.info(
+                                    f"Resuming Conversation - {time.time() - start_time:2f}")
+                                try:
+
+                                    recognized_text = recognizer.recognize_google(
+                                        audio)
+
+                                    logger.info(
+                                        f"Recognized Text : {recognized_text}")
 
                                     if fuzz.partial_ratio(recognized_text, "stop chat") > 70:
-                                        logger.info("Stop Chat Command Received")
-                                        stop_chat_cue = random.choice(stop_chat_cues)
-                                        display_controller.render_text_threaded_v2(stop_chat_cue)
-                                        tts.load_and_play(f"{os.getcwd()}/assets/voice_cues/stop_chat_cues/{stop_chat_dict[stop_chat_cue]}.mp3")
+                                        logger.info(
+                                            "Stop Chat Command Received")
+                                        stop_chat_cue = random.choice(
+                                            stop_chat_cues)
+                                        display_controller.render_text_threaded_v2(
+                                            stop_chat_cue)
+                                        tts.load_and_play(
+                                            f"{os.getcwd()}/assets/voice_cues/stop_chat_cues/{stop_chat_dict[stop_chat_cue]}.mp3")
                                         ASK_FOR_WAKE_WORD = True
                                         break
-                                
+
                                     await process_input(recognized_text)
                                     gc.collect()
                                 except Exception as e:
                                     gc.collect()
                                     logger.warning(f"Recognition Failed : {e}")
-                                
 
                         else:
                             command = recognized_text.lower().replace(WAKE_WORD, "").strip()
@@ -354,8 +379,9 @@ async def interact():
                         pass
                         logger.warning(f"False Trigger! Keep Sleeping!")
                 except Exception as e:
-                    
-                    logger.warning(f"Some Error Occoured : {e}\n{traceback.format_exc()}")
+
+                    logger.warning(
+                        f"Some Error Occoured : {e}\n{traceback.format_exc()}")
                     logger.warning(f"Some Error Occoured 2 : {str(e)}")
 
         except Exception as e:
@@ -365,7 +391,8 @@ async def interact():
 
 @timing
 async def main():
-    logger.info(f"Falcon Mini Booted at {datetime.now().strftime('%A, %B %d, %Y, %H:%M:%S')}")
+    logger.info(
+        f"Falcon Mini Booted at {datetime.now().strftime('%A, %B %d, %Y, %H:%M:%S')}")
     parser = argparse.ArgumentParser(
         description="Process input and optionally generate output audio.")
     parser.add_argument("-O", "--output", dest="output_text",

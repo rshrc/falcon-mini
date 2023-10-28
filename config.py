@@ -1,12 +1,10 @@
 import os
+from dataclasses import asdict, dataclass
 from typing import Any, Dict, NoReturn, Union
 
 import requests as r
 import yaml
 
-
-from dataclasses import dataclass, asdict
-from typing import Any
 dir = os.getcwd()
 
 @dataclass

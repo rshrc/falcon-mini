@@ -3,15 +3,16 @@ import os
 import threading
 import time
 from tempfile import TemporaryFile
+
 import requests as r
 from google.cloud import texttospeech
 from gtts import gTTS
-from measure import timing
 from pydub import AudioSegment
 from pydub.playback import play
 
 from cues import (audio_received_dict, awaiting_response_dict,
-                        wake_word_dict, chat_mode_activated_dict, stop_chat_dict)
+                  chat_mode_activated_dict, stop_chat_dict, wake_word_dict)
+from measure import timing
 
 
 class TextToSpeechPlayer:

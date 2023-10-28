@@ -1,8 +1,8 @@
+import logging
 import os
 import subprocess
-import time
-import logging
 import sys
+import time
 
 logging.basicConfig(level=logging.INFO, filename='falcon_boot.log', filemode='a', format='%(asctime)s - %(levelname)s - %(message)s')
 
