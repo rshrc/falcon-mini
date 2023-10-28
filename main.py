@@ -95,6 +95,8 @@ tts = TextToSpeechPlayer(configuration.voice.url)
 
 MEMORY_CONTEXT = 0
 
+PHRASE_TIME_LIMIT = 5
+
 if isinstance(configuration, str):
     print(configuration)
 elif isinstance(configuration, DeviceConfig):
@@ -318,7 +320,7 @@ async def interact():
 
                                 logger.info("Listening for second command!")
                                 start_time = time.time()
-                                audio = recognizer.listen(source, timeout=3, phrase_time_limit=10)
+                                audio = recognizer.listen(source, timeout=3, phrase_time_limit=PHRASE_TIME_LIMIT)
                             
                                 logger.info(f"Resuming Conversation - {time.time() - start_time:2f}")
                                 try:
