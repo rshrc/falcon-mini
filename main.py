@@ -318,7 +318,7 @@ async def interact():
 
                                 logger.info("Listening for second command!")
                                 start_time = time.time()
-                                audio = recognizer.listen(source, timeout=3)
+                                audio = recognizer.listen(source, timeout=3, phrase_time_limit=10)
                             
                                 logger.info(f"Resuming Conversation - {time.time() - start_time:2f}")
                                 try:
@@ -353,7 +353,9 @@ async def interact():
                         logger.warning(f"False Trigger! Keep Sleeping!")
                 except Exception as e:
                     
-                    logger.warning(f"Some Error Occoured : {e}")
+                    logger.warning(f"Some Error Occoured : {e}\n{traceback.format_exc()}")
+                    logger.warning(f"Some Error Occoured 2 : {str(e)}")
+
         except Exception as e:
             display_controller.render_text_threaded_v2("I heard some noise")
             logger.warning(f"False Wake Up! Keep Sleeping! {e}")
