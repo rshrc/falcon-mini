@@ -31,7 +31,8 @@ audio_received_cues = [
     "Hmm, let's see...",
 ]
 
-audio_received_dict = {cue: idx for idx, cue in enumerate(audio_received_cues, 1)}
+audio_received_dict = {cue: idx for idx,
+                       cue in enumerate(audio_received_cues, 1)}
 
 
 awaiting_response_cues = [
@@ -54,8 +55,8 @@ awaiting_response_cues = [
     "Erm..."
 ]
 
-awaiting_response_dict = {cue: idx for idx, cue in enumerate(awaiting_response_cues, 1)}
-
+awaiting_response_dict = {cue: idx for idx,
+                          cue in enumerate(awaiting_response_cues, 1)}
 
 
 chat_mode_activated_cues = [
@@ -72,7 +73,8 @@ chat_mode_activated_cues = [
     "You've got my full attention. Let's chat!"
 ]
 
-chat_mode_activated_dict = {cue: idx for idx, cue in enumerate(chat_mode_activated_cues, 1)}
+chat_mode_activated_dict = {cue: idx for idx,
+                            cue in enumerate(chat_mode_activated_cues, 1)}
 
 stop_chat_cues = [
     "Chat's on break!",
@@ -88,3 +90,15 @@ stop_chat_cues = [
 ]
 
 stop_chat_dict = {cue: idx for idx, cue in enumerate(stop_chat_cues, 1)}
+
+audio_error_cues = [
+    "Sorry, I didn't catch that.",
+    "Please repeat.",
+    "I couldn't understand. Can you try again?",
+    "Voice not recognized.",
+    "Let's try once more."
+    "Can you speak a bit clearer?",
+    "I missed that. Please say it again."
+]
+
+audio_error_dict = {cue: idx for idx, cue in enumerate(audio_error_cues, 1)}

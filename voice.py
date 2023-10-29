@@ -11,7 +11,7 @@ from pydub import AudioSegment
 from pydub.playback import play
 
 from cues import (audio_received_dict, awaiting_response_dict,
-                  chat_mode_activated_dict, stop_chat_dict, wake_word_dict)
+                  chat_mode_activated_dict, stop_chat_dict, wake_word_dict, audio_error_cues, audio_error_dict,)
 from measure import timing
 
 
@@ -151,7 +151,7 @@ def play_audio(audio_path: str):
 
 if __name__=="__main__":
     player = TextToSpeechPlayer("")
-    # player.cues_to_audio_files(stop_chat_dict, "stop_chat_cues")
+    player.cues_to_audio_files(audio_error_dict, "audio_error_cues")
     # player.cues_to_audio_files(wake_word_dict, "wake_word_cues")
     # player.cues_to_audio_files(audio_received_dict, "audio_received_cues")
     # player.cues_to_audio_files(awaiting_response_dict, "awaiting_response_cues")

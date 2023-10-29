@@ -7,7 +7,7 @@ from cues import (audio_received_cues, audio_received_dict,
                   awaiting_response_cues, awaiting_response_dict,
                   chat_mode_activated_cues, chat_mode_activated_dict,
                   stop_chat_cues, stop_chat_dict, wake_word_cues,
-                  wake_word_dict)
+                  wake_word_dict, audio_error_cues, audio_error_dict)
 from config import DeviceConfig, get_configuration, read_config
 import intents
 from nltk.tokenize import word_tokenize
@@ -32,6 +32,7 @@ import multiprocessing
 import os
 import sys
 import time
+import speech_recognition
 
 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = f"{os.getcwd()}/gconfig.json"
 
@@ -276,6 +277,8 @@ async def interact():
             recognizer.energy_threshold = 7000
             logger.info(
                 f"Energy Threshold Set to {recognizer.energy_threshold}")
+           
+            
 
             listen = True
             if listen:
@@ -300,6 +303,7 @@ async def interact():
                     recognized_text = recognizer.recognize_google(
                         audio).lower()
                     logger.info(f"Recognized Text : {recognized_text}")
+
 
                     words = recognized_text.split()
 
@@ -348,7 +352,7 @@ async def interact():
 
                                     recognized_text = recognizer.recognize_google(
                                         audio)
-
+                                    
                                     logger.info(
                                         f"Recognized Text : {recognized_text}")
 
@@ -366,6 +370,16 @@ async def interact():
 
                                     await process_input(recognized_text)
                                     gc.collect()
+                                except speech_recognition.UnknownValueError:
+                                    logger.warning("Google Web Speech API could not understand audio (ResumeConv)")
+                                    audio_error_cue = random.choice(audio_error_cues)
+                                    display_controller.render_text_threaded_v2(
+                                            audio_error_cue)
+                                    tts.load_and_play(
+                                                f"{os.getcwd()}/assets/voice_cues/audio_error_cues/{audio_error_dict[audio_error_cue]}.mp3")
+
+                                except speech_recognition.RequestError as e:
+                                    logger.warning(f"Could not request results from Google Web Speech API (ResumeConv): {e}")
                                 except Exception as e:
                                     gc.collect()
                                     logger.warning(f"Recognition Failed : {e}")
@@ -378,6 +392,16 @@ async def interact():
                     else:
                         pass
                         logger.warning(f"False Trigger! Keep Sleeping!")
+                # except speech_recognition.UnknownValueError:
+                #     logger.warning("Google Web Speech API could not understand audio")
+                #     audio_error_cue = random.choice(audio_error_cues)
+                #     display_controller.render_text_threaded_v2(
+                #             audio_error_cue)
+                #     tts.load_and_play(
+                #                 f"{os.getcwd()}/assets/voice_cues/audio_error_cues/{audio_error_dict[audio_error_cue]}.mp3")
+
+                # except speech_recognition.RequestError as e:
+                #     logger.warning(f"Could not request results from Google Web Speech API: {e}")
                 except Exception as e:
 
                     logger.warning(
