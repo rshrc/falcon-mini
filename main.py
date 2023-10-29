@@ -89,7 +89,7 @@ API_URL = os.getenv('URL')
 BASE_URL = os.getenv('BASE_URL')
 WAKE_WORD = os.getenv('WAKE_WORD').lower()
 
-test_device_uuid = "5caa2cef-3411-4368-9a6d-f9eefe9c34f9"
+test_device_uuid = "46135e88-2645-44ce-bd1f-cbc9bb9e6557"
 
 CHAT_MODE = False
 ASK_FOR_WAKE_WORD = True
