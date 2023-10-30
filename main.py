@@ -8,7 +8,7 @@ from cues import (audio_received_cues, audio_received_dict,
                   chat_mode_activated_cues, chat_mode_activated_dict,
                   stop_chat_cues, stop_chat_dict, wake_word_cues,
                   wake_word_dict, audio_error_cues, audio_error_dict)
-from config import DeviceConfig, get_configuration, read_config
+from config import DeviceConfig, get_configuration
 import intents
 from nltk.tokenize import word_tokenize
 from nltk.tag import pos_tag
@@ -76,7 +76,7 @@ BPRAP = "voice_cues"
 
 os.environ['ALSA_WARNINGS'] = '0'
 
-IDENTIFIER = read_config()['user']['id']
+
 
 headers = {
     'X-Device-Serial': get_serial_number()

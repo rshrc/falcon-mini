@@ -109,15 +109,8 @@ def generate_config(user_id: int) -> NoReturn:
     with open(f"{dir}/utilities/data.yaml", 'w') as file:
         yaml.safe_dump(data, file, default_flow_style=False)
 
-def read_config() -> Dict[str, Any]:
-    file: str = f'{dir}/utilities/data.yaml'
 
-    with open(file, 'r') as f:
-        data: Dict[str, Any] = yaml.safe_load(f)
-
-    return data
 
 if __name__=='__main__':    
     # generate_config(123)
-
-    print(read_config())
+    pass
