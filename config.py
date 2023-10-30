@@ -12,6 +12,7 @@ class UserInfo:
     uuid: str
     name: str
     address: str
+    identifier: str
 
 @dataclass
 class SubscriptionInfo:
@@ -86,12 +87,14 @@ class DeviceConfig:
 
 
 
-def get_configuration(url: str, device_uuid: Union[str, None]) -> Union[str, DeviceConfig]:
-    if device_uuid is None:
-        return "No Device Set Yet!"
+def get_configuration(url: str, serial_number) -> Union[str, DeviceConfig]:
+    if serial_number is None:
+        return "Headers Required"
 
-    url = f"{url}api/j3devices/{device_uuid}/"
+    url = f"{url}api/j3devices/{serial_number}"
     response = r.get(url)
+
+    print(response.text)
 
     return DeviceConfig.from_dict(response.json())
 

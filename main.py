@@ -94,7 +94,10 @@ test_device_uuid = "46135e88-2645-44ce-bd1f-cbc9bb9e6557"
 CHAT_MODE = False
 ASK_FOR_WAKE_WORD = True
 
-configuration = get_configuration(BASE_URL, test_device_uuid)
+configuration = get_configuration(BASE_URL, get_serial_number())
+
+
+IDENTIFIER = configuration.user_info.identifier
 
 tts = TextToSpeechPlayer(configuration.voice.url)
 
