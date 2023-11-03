@@ -3,7 +3,7 @@ import os
 import threading
 import time
 from tempfile import TemporaryFile
-
+from cues import transform_wake_word_cues
 import requests as r
 from google.cloud import texttospeech
 from gtts import gTTS
@@ -56,6 +56,39 @@ class TextToSpeechPlayer:
 
         print("Audio Stored")
 
+    def save_wake_word_cue(text, language, voice, sequence_number):
+        url = "https://lionlabs.co.in/ai/synthesize/"
+        for language, genders in transform_wake_word_cues()["wake_word_cues"].items():
+            for gender, cues in genders.items():
+                for cue, sequence_number in cues.items():
+                    # Define the directory path
+                    dir_path = f"/mnt/data/voice_cues/wake_word_cues/{language}/{gender}"
+                    # Create the directories if they don't exist
+                    os.makedirs(dir_path, exist_ok=True)
+                    # Define the file path
+                    file_path = f"{dir_path}/{sequence_number}.mp3"
+
+                    data = {
+                            "text": text,
+                            "language": language,
+                            "voice": gender
+                        }
+
+                    response = r.post(url, json=data)
+
+                    if response.ok and 'audio/mpeg' in response.headers.get('Content-Type', ''):
+                        dir_path = f"assets/voice_cues/wake_word_cues/{language}/{voice}/"
+                        
+                        os.makedirs(dir_path, exist_ok=True)
+                        
+                        file_path = os.path.join(dir_path, f"{sequence_number}.mp3")
+                        
+                        with open(file_path, 'wb') as file:
+                            file.write(response.content)
+                        return f"File saved as {file_path}"
+                    else:
+                        return "Failed to retrieve an MP3 file."
+
     def load_and_play(self, filename, use_thread=False):
         audio = AudioSegment.from_mp3(filename)
         if use_thread:
@@ -72,6 +105,7 @@ class TextToSpeechPlayer:
     def text_to_speech(self, text, output_filename):
         self.synthesize_speech(text, output_filename)
         self.load_and_play(output_filename)
+
 
     def cues_to_audio_files(self, cue_dict, folder_name):
         # Ensure the folder exists

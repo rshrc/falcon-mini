@@ -106,6 +106,7 @@ class DisplayController:
 
     def draw_text(self, text, position, fill):
         ic(f"Drawing text {text}")
+        text = text.encode('utf-8').decode('utf-8')
         lines = self.add_newlines_v2(text).split("\n")
         y = position[1]
         for line in lines:
