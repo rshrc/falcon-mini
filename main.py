@@ -99,7 +99,9 @@ configuration = get_configuration(BASE_URL, get_serial_number())
 
 IDENTIFIER = configuration.user_info.identifier
 
-tts = TextToSpeechPlayer(configuration.voice.url)
+print(f"Line 102: {configuration.voice.language} {configuration.voice.voice_gender}")
+
+tts = TextToSpeechPlayer(configuration.voice.url, configuration.voice.language, configuration.voice.voice_gender)
 
 MEMORY_CONTEXT = 0
 

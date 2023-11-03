@@ -16,9 +16,11 @@ from measure import timing
 
 
 class TextToSpeechPlayer:
-    def __init__(self, url):
+    def __init__(self, url, language, gender):
         self.client = texttospeech.TextToSpeechClient()
         self.url = url
+        self.language = language
+        self.gender = gender
 
     def synthesize_speech(self, text, output_filename):
         start_time = time.time()
@@ -63,7 +65,7 @@ class TextToSpeechPlayer:
         # load_audio_time = time.time()
         # print(f"Time to load audio : {load_audio_time - time.time() + load_audio_time:.2f}")
         else:
-        # print("Loaded Audio")
+            # print("Loaded Audio")
             play(audio)
         # print(f"To play : {time.time() - load_audio_time:.2f}")
 
@@ -71,9 +73,8 @@ class TextToSpeechPlayer:
         self.synthesize_speech(text, output_filename)
         self.load_and_play(output_filename)
 
-
     def cues_to_audio_files(self, cue_dict, folder_name):
-    # Ensure the folder exists
+        # Ensure the folder exists
         if not os.path.exists(folder_name):
             os.makedirs(folder_name)
 
@@ -86,28 +87,29 @@ class TextToSpeechPlayer:
 
             print(f"Saved '{cue}' to {filepath}")
 
-
     def play(self, text, headers):
         # Make a request to the Django API endpoint to get synthesized audio
         response = r.post(
             self.url,
-            json={"text": text},
+            json={"text": text, "language": self.language,
+                  "voice": self.gender},
             headers=headers,
         )
 
         # Check if the request was successful
         if response.status_code == 200:
             output_filename = "output.mp3"
-            
+
             # Write the audio data to a temporary file
             with open(output_filename, "wb") as file:
                 file.write(response.content)
-            
+
             # Load and play the audio
             self.load_and_play(output_filename)
-        
+
         else:
-            print(f"Failed to get audio. Status code: {response.status_code}. Message: {response.text}")
+            print(
+                f"Failed to get audio. Status code: {response.status_code}. Message: {response.text}")
 
 
 @timing
@@ -135,6 +137,7 @@ async def output_voice(text: str, expect_return=False):
     result = await loop.run_in_executor(None, _output_voice_sync, text, expect_return)
     return result
 
+
 def _output_voice_sync(text: str, expect_return=False):
     tts = gTTS(text, lang='en')
     fp = TemporaryFile()
@@ -144,16 +147,17 @@ def _output_voice_sync(text: str, expect_return=False):
     play(song)
     return expect_return
 
+
 def play_audio(audio_path: str):
     audio = AudioSegment.from_file(audio_path)
     play(audio)
     print(f"Playing: {audio_path}")
 
-if __name__=="__main__":
+
+if __name__ == "__main__":
     player = TextToSpeechPlayer("")
-    player.cues_to_audio_files(audio_error_dict, "audio_error_cues")
+    # player.cues_to_audio_files(audio_error_dict, "audio_error_cues")
     # player.cues_to_audio_files(wake_word_dict, "wake_word_cues")
     # player.cues_to_audio_files(audio_received_dict, "audio_received_cues")
     # player.cues_to_audio_files(awaiting_response_dict, "awaiting_response_cues")
     # player.cues_to_audio_files(chat_mode_activated_dict, "chat_mode_cues")
-

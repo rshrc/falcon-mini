@@ -46,6 +46,10 @@ class Memory:
 
 @dataclass
 class Voice:
+    language: str
+    voice_gender: str
+    wake_up_phrase: str
+    talk: str
     url: str
 
 @dataclass
@@ -70,7 +74,6 @@ class DeviceConfig:
             update_info=UpdateInfo(**data['update_info']),
             memory=Memory(**data['memory']),
             voice=Voice(**data['voice']) 
-
         )
 
     def to_dict(self):
@@ -82,7 +85,6 @@ class DeviceConfig:
             "update_info": asdict(self.update_info),
             "memory": asdict(self.memory),
             "voice": asdict(self.voice) 
-
         }
 
 

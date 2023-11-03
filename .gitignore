@@ -6,7 +6,8 @@ audio_files0/
 # C extensions
 *.so
 nltk_data/
-
+main.build/
+main.dist/
 # Distribution / packaging
 .Python
 build/
