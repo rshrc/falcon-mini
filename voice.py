@@ -9,9 +9,8 @@ from google.cloud import texttospeech
 from gtts import gTTS
 from pydub import AudioSegment
 from pydub.playback import play
-
-from cues import (audio_received_dict, awaiting_response_dict,
-                  chat_mode_activated_dict, stop_chat_dict, wake_word_dict, audio_error_cues, audio_error_dict,)
+import json
+import sys
 from measure import timing
 
 
@@ -56,38 +55,40 @@ class TextToSpeechPlayer:
 
         print("Audio Stored")
 
-    def save_wake_word_cue(text, language, voice, sequence_number):
-        url = "https://lionlabs.co.in/ai/synthesize/"
-        for language, genders in transform_wake_word_cues()["wake_word_cues"].items():
-            for gender, cues in genders.items():
-                for cue, sequence_number in cues.items():
-                    # Define the directory path
-                    dir_path = f"/mnt/data/voice_cues/wake_word_cues/{language}/{gender}"
-                    # Create the directories if they don't exist
-                    os.makedirs(dir_path, exist_ok=True)
-                    # Define the file path
-                    file_path = f"{dir_path}/{sequence_number}.mp3"
+    def save_cues_audio(text):
+        # url = "https://lionlabs.co.in/ai/synthesize/"
+        url = "http://localhost:8000/ai/synthesize/"
+        exp = transform_wake_word_cues()
+        for cue_type, values in exp.items():
+            for lang, data in exp[cue_type].items():
+                for gender in ['male', 'female']:
+                    for content, number in data[gender].items():
+                        print(f"Cue Type : {cue_type} {lang} {gender}")
+                        response = r.post(url, json={
+                            "text": content,
+                            "language": lang,
+                            "voice": gender,
+                        }, headers={
+                            'X-Device-Serial': '100000006486a9c4'
+                        })
 
-                    data = {
-                            "text": text,
-                            "language": language,
-                            "voice": gender
-                        }
+                        print(response.status_code)
+                        
+                        if response.status_code == 200:
+                            dir_path = f"{os.getcwd()}/assets/voice_cues/{cue_type}/{lang}/{gender}"
 
-                    response = r.post(url, json=data)
+                            # Construct the file path
+                            os.makedirs(dir_path, exist_ok=True)
 
-                    if response.ok and 'audio/mpeg' in response.headers.get('Content-Type', ''):
-                        dir_path = f"assets/voice_cues/wake_word_cues/{language}/{voice}/"
-                        
-                        os.makedirs(dir_path, exist_ok=True)
-                        
-                        file_path = os.path.join(dir_path, f"{sequence_number}.mp3")
-                        
-                        with open(file_path, 'wb') as file:
-                            file.write(response.content)
-                        return f"File saved as {file_path}"
-                    else:
-                        return "Failed to retrieve an MP3 file."
+                            # Construct the file path
+                            file_path = f"{dir_path}/{number}.mp3"
+                            
+                            # Open the file in binary write mode and write the contents
+                            with open(file_path, 'wb') as audio_file:
+                                audio_file.write(response.content)
+                        else:
+                            print(f"Failed to get audio content for {content}: {response.status_code}")
+                        # sys.exit()
 
     def load_and_play(self, filename, use_thread=False):
         audio = AudioSegment.from_mp3(filename)
@@ -105,7 +106,6 @@ class TextToSpeechPlayer:
     def text_to_speech(self, text, output_filename):
         self.synthesize_speech(text, output_filename)
         self.load_and_play(output_filename)
-
 
     def cues_to_audio_files(self, cue_dict, folder_name):
         # Ensure the folder exists
@@ -189,7 +189,8 @@ def play_audio(audio_path: str):
 
 
 if __name__ == "__main__":
-    player = TextToSpeechPlayer("")
+    player = TextToSpeechPlayer("", "", "")
+    player.save_cues_audio()
     # player.cues_to_audio_files(audio_error_dict, "audio_error_cues")
     # player.cues_to_audio_files(wake_word_dict, "wake_word_cues")
     # player.cues_to_audio_files(audio_received_dict, "audio_received_cues")
