@@ -3,11 +3,7 @@ from utils import get_last_n, store_data
 from serial_number import get_serial_number
 from measure import timing
 from disply_lib import DisplayController
-from cues import (audio_received_cues, audio_received_dict,
-                  awaiting_response_cues, awaiting_response_dict,
-                  chat_mode_activated_cues, chat_mode_activated_dict,
-                  stop_chat_cues, stop_chat_dict, wake_word_cues,
-                  wake_word_dict, audio_error_cues, audio_error_dict)
+from cues import random_cue_selection
 from config import DeviceConfig, get_configuration
 import intents
 from nltk.tokenize import word_tokenize
@@ -89,7 +85,7 @@ API_URL = os.getenv('URL')
 BASE_URL = os.getenv('BASE_URL')
 WAKE_WORD = os.getenv('WAKE_WORD').lower()
 
-test_device_uuid = "46135e88-2645-44ce-bd1f-cbc9bb9e6557"
+
 
 CHAT_MODE = False
 ASK_FOR_WAKE_WORD = True
@@ -99,9 +95,20 @@ configuration = get_configuration(BASE_URL, get_serial_number())
 
 IDENTIFIER = configuration.user_info.identifier
 
-print(f"Line 102: {configuration.voice.language} {configuration.voice.voice_gender}")
+print(f"Lang and Voice: {configuration.voice.language} {configuration.voice.voice_gender}")
 
 tts = TextToSpeechPlayer(configuration.voice.url, configuration.voice.language, configuration.voice.voice_gender)
+
+LANG_CHOICE = configuration.voice.language
+LANG_GENDER = configuration.voice.voice_gender
+
+WORKING_DIR = os.getcwd()
+VOICE_CUES_DIR = f"{WORKING_DIR}/assets/voice_cues/"
+BASE_WAKE_UP_DIR = f"{VOICE_CUES_DIR}wake_word_cues/{configuration.voice.language}/{configuration.voice.voice_gender}/"
+BASE_STOP_CHAT_DIR = f"{VOICE_CUES_DIR}stop_chat_cues/{configuration.voice.language}/{configuration.voice.voice_gender}/"
+BASE_CHAT_MODE_DIR = f"{VOICE_CUES_DIR}chat_mode_activated_cues/{configuration.voice.language}/{configuration.voice.voice_gender}/"
+BASE_AUDIO_ERROR_DIR = f"{VOICE_CUES_DIR}audio_error_cues/{configuration.voice.language}/{configuration.voice.voice_gender}/"
+BASE_AWAITING_RESPONSE_DIR = f"{VOICE_CUES_DIR}awaiting_response_cues/{configuration.voice.language}/{configuration.voice.voice_gender}/"
 
 MEMORY_CONTEXT = 0
 
@@ -156,10 +163,10 @@ def update_conversation(input, output):
 
 @timing
 async def process_input(recognized_text):
-    awaiting_response_cue = random.choice(awaiting_response_cues)
-    display_controller.render_text_threaded_v2(awaiting_response_cue)
+    awaiting_response_cue = random_cue_selection('awaiting_response_cue', LANG_CHOICE, LANG_GENDER)
+    display_controller.render_text_threaded_v2(awaiting_response_cue[0])
     tts.load_and_play(
-        f"{os.getcwd()}/assets/voice_cues/awaiting_response_cues/{awaiting_response_dict[awaiting_response_cue]}.mp3", use_thread=True)
+        f"{BASE_AWAITING_RESPONSE_DIR}{awaiting_response_cue[1]}.mp3", use_thread=True)
 
     try:
         tokens = word_tokenize(recognized_text)
@@ -290,10 +297,10 @@ async def interact():
                 logger.info("Listening for Wake Word")
 
                 if ASK_FOR_WAKE_WORD:
-                    wake_word_cue = random.choice(wake_word_cues)
-                    display_controller.render_text_threaded_v2(wake_word_cue)
+                    wake_word_cue = random_cue_selection('wake_word_cues', LANG_CHOICE, LANG_GENDER)
+                    display_controller.render_text_threaded_v2(wake_word_cue[0])
                     tts.load_and_play(
-                        f"{os.getcwd()}/assets/voice_cues/wake_word_cues/{wake_word_dict[wake_word_cue]}.mp3")
+                        f"{BASE_WAKE_UP_DIR}{wake_word_cue[1]}.mp3")
                 logger.info("User Informed About State")
 
                 ASK_FOR_WAKE_WORD = False
@@ -337,12 +344,11 @@ async def interact():
                         logger.info(
                             f"Wake Word Match {wake_word_match} and Lets Chat Match {lets_chat_match}")
                         if lets_chat_match > 70:
-                            chat_mode_cue = random.choice(
-                                chat_mode_activated_cues)
+                            chat_mode_cue = random_cue_selection('chat_mode_activated_cues', LANG_CHOICE, LANG_GENDER)
                             display_controller.render_text_threaded_v2(
-                                chat_mode_cue)
+                                chat_mode_cue[0])
                             tts.load_and_play(
-                                f"{os.getcwd()}/assets/voice_cues/chat_mode_cues/{chat_mode_activated_dict[chat_mode_cue]}.mp3")
+                                f"{BASE_CHAT_MODE_DIR}{chat_mode_cue[1]}.mp3")
 
                             while True:
 
@@ -364,12 +370,11 @@ async def interact():
                                     if fuzz.partial_ratio(recognized_text, "stop chat") > 70:
                                         logger.info(
                                             "Stop Chat Command Received")
-                                        stop_chat_cue = random.choice(
-                                            stop_chat_cues)
+                                        stop_chat_cue = random_cue_selection('stop_chat_cues', LANG_GENDER, LANG_CHOICE)
                                         display_controller.render_text_threaded_v2(
-                                            stop_chat_cue)
+                                            stop_chat_cue[0])
                                         tts.load_and_play(
-                                            f"{os.getcwd()}/assets/voice_cues/stop_chat_cues/{stop_chat_dict[stop_chat_cue]}.mp3")
+                                            f"{BASE_STOP_CHAT_DIR}{stop_chat_cue[1]}.mp3")
                                         ASK_FOR_WAKE_WORD = True
                                         break
 
@@ -377,11 +382,11 @@ async def interact():
                                     gc.collect()
                                 except speech_recognition.UnknownValueError:
                                     logger.warning("Google Web Speech API could not understand audio (ResumeConv)")
-                                    audio_error_cue = random.choice(audio_error_cues)
+                                    audio_error_cue = random_cue_selection('audio_error_cues', LANG_CHOICE, LANG_GENDER)
                                     display_controller.render_text_threaded_v2(
-                                            audio_error_cue)
+                                            audio_error_cue[0])
                                     tts.load_and_play(
-                                                f"{os.getcwd()}/assets/voice_cues/audio_error_cues/{audio_error_dict[audio_error_cue]}.mp3")
+                                                f"{BASE_AUDIO_ERROR_DIR}{audio_error_cue[1]}.mp3")
 
                                 except speech_recognition.RequestError as e:
                                     logger.warning(f"Could not request results from Google Web Speech API (ResumeConv): {e}")

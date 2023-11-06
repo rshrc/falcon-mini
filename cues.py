@@ -1,5 +1,5 @@
 import json
-
+import random
 cues_map = {
     "wake_word_cues": {
         "english-india": {
@@ -786,10 +786,9 @@ cues_map = {
 }
 
 
-def transform_wake_word_cues():
+def transform_cues():
     new_map = {}
     for key, value in cues_map.items():
-        print(f"{key} and ")
         new_map[key] = {}
         for language, genders in value.items():
             new_map[key][language] = {}
@@ -800,9 +799,21 @@ def transform_wake_word_cues():
 
     return new_map
 
+mapped_cues = transform_cues()
+
+
+
+def random_cue_selection(cue_type, language, gender):
+    cues = mapped_cues[cue_type][language][gender]
+    random_value = random.choice(list(cues.items()))
+    print(random_value)
+
+    print(random_value[0])
+
+    return random_value
 
 if __name__ == "__main__":
     with open('cues.json', 'w', encoding='utf-8') as f:
-        json.dump(transform_wake_word_cues(), f, ensure_ascii=False, indent=4)
+        json.dump(transform_cues(), f, ensure_ascii=False, indent=4)
 
     print("JSON file was created successfully.")
