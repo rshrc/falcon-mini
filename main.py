@@ -163,7 +163,7 @@ def update_conversation(input, output):
 
 @timing
 async def process_input(recognized_text):
-    awaiting_response_cue = random_cue_selection('awaiting_response_cue', LANG_CHOICE, LANG_GENDER)
+    awaiting_response_cue = random_cue_selection('awaiting_response_cues', LANG_CHOICE, LANG_GENDER)
     display_controller.render_text_threaded_v2(awaiting_response_cue[0])
     tts.load_and_play(
         f"{BASE_AWAITING_RESPONSE_DIR}{awaiting_response_cue[1]}.mp3", use_thread=True)
