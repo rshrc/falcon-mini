@@ -368,9 +368,11 @@ async def interact():
                                         f"Recognized Text : {recognized_text}")
 
                                     if fuzz.partial_ratio(recognized_text, "stop chat") > 70:
+                                        logger.info(f"THE DIRECTORY FOR STOP {BASE_STOP_CHAT_DIR}")
                                         logger.info(
                                             "Stop Chat Command Received")
-                                        stop_chat_cue = random_cue_selection('stop_chat_cues', LANG_GENDER, LANG_CHOICE)
+                                        stop_chat_cue = random_cue_selection('stop_chat_cues', LANG_CHOICE, LANG_GENDER)
+                                        logger.info(f"Stop chat cue {stop_chat_cue}")
                                         display_controller.render_text_threaded_v2(
                                             stop_chat_cue[0])
                                         tts.load_and_play(
@@ -383,6 +385,9 @@ async def interact():
                                 except speech_recognition.UnknownValueError:
                                     logger.warning("Google Web Speech API could not understand audio (ResumeConv)")
                                     audio_error_cue = random_cue_selection('audio_error_cues', LANG_CHOICE, LANG_GENDER)
+                                    
+                                    logger.info(f"Generated something here : {audio_error_cue}")
+                                    
                                     display_controller.render_text_threaded_v2(
                                             audio_error_cue[0])
                                     tts.load_and_play(
@@ -392,7 +397,7 @@ async def interact():
                                     logger.warning(f"Could not request results from Google Web Speech API (ResumeConv): {e}")
                                 except Exception as e:
                                     gc.collect()
-                                    logger.warning(f"Recognition Failed : {e}")
+                                    logger.warning(f"Recognition Failed : {e} {traceback.format_exc()}")
 
                         else:
                             command = recognized_text.lower().replace(WAKE_WORD, "").strip()

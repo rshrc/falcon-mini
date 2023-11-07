@@ -804,6 +804,12 @@ mapped_cues = transform_cues()
 
 
 def random_cue_selection(cue_type, language, gender):
+
+    # print(f"Found {mapped_cues[cue_type]}")
+    print(f">> {cue_type} {language} {gender}")
+    print(f"Found {mapped_cues[cue_type][language]}")
+    print(f"Found {mapped_cues[cue_type][language][gender]}")
+
     cues = mapped_cues[cue_type][language][gender]
     random_value = random.choice(list(cues.items()))
     print(random_value)
