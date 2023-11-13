@@ -95,6 +95,9 @@ print(
 
 LANG_CHOICE = configuration.voice.language
 LANG_GENDER = configuration.voice.voice_gender
+LETS_CHAT_MODE_AVAILABLE = configuration.voice.lets_chat_mode_available
+
+logger.info(f"Lets Chat Mode Available : {LETS_CHAT_MODE_AVAILABLE}")
 
 tts = TextToSpeechPlayer(configuration.voice.url, LANG_CHOICE, LANG_GENDER)
 
@@ -323,23 +326,23 @@ async def interact():
                     wake_word_match = 0
                     lets_chat_match = 0
 
-                    lets_chat_match = fuzz.partial_ratio(
+                    lets_chat_match = 0 if not LETS_CHAT_MODE_AVAILABLE  else fuzz.partial_ratio(
                         recognized_text, "let's chat")
 
                     logger.info(
                         f"Match {recognized_text} and Lets Chat - {lets_chat_match}")
 
                     if lets_chat_match <= 70 and len(words) >= 2:
-                        logger.info(
-                            f"Lets Chat Not Matched: Words Length {len(words)}")
-                        first_two_words = " ".join(words[:2])
-                        wake_word_match = fuzz.partial_ratio(
-                            first_two_words, WAKE_WORD)
+                            logger.info(
+                                f"Lets Chat Not Matched: Words Length {len(words)}")
+                            first_two_words = " ".join(words[:2])
+                            wake_word_match = fuzz.partial_ratio(
+                                first_two_words, WAKE_WORD)
 
-                        if wake_word_match > 70 and len(words) >= 4:
-                            next_two_words = " ".join(words[2:4])
-                            lets_chat_match = fuzz.partial_ratio(
-                                next_two_words, "let's chat")
+                            if wake_word_match > 70 and len(words) >= 4:
+                                next_two_words = " ".join(words[2:4])
+                                lets_chat_match = 0 if not LETS_CHAT_MODE_AVAILABLE  else fuzz.partial_ratio(
+                                    next_two_words, "let's chat")
 
                     if wake_word_match > 70 or lets_chat_match > 70:
                         logger.info(

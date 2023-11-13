@@ -51,6 +51,7 @@ class Voice:
     wake_up_phrase: str
     talk: str
     url: str
+    lets_chat_mode_available: str
 
 @dataclass
 class DeviceConfig:
