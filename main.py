@@ -97,18 +97,20 @@ IDENTIFIER = configuration.user_info.identifier
 
 print(f"Lang and Voice: {configuration.voice.language} {configuration.voice.voice_gender}")
 
-tts = TextToSpeechPlayer(configuration.voice.url, configuration.voice.language, configuration.voice.voice_gender)
-
 LANG_CHOICE = configuration.voice.language
 LANG_GENDER = configuration.voice.voice_gender
 
+tts = TextToSpeechPlayer(configuration.voice.url, LANG_CHOICE, LANG_GENDER)
+
+
+
 WORKING_DIR = os.getcwd()
 VOICE_CUES_DIR = f"{WORKING_DIR}/assets/voice_cues/"
-BASE_WAKE_UP_DIR = f"{VOICE_CUES_DIR}wake_word_cues/{configuration.voice.language}/{configuration.voice.voice_gender}/"
-BASE_STOP_CHAT_DIR = f"{VOICE_CUES_DIR}stop_chat_cues/{configuration.voice.language}/{configuration.voice.voice_gender}/"
-BASE_CHAT_MODE_DIR = f"{VOICE_CUES_DIR}chat_mode_activated_cues/{configuration.voice.language}/{configuration.voice.voice_gender}/"
-BASE_AUDIO_ERROR_DIR = f"{VOICE_CUES_DIR}audio_error_cues/{configuration.voice.language}/{configuration.voice.voice_gender}/"
-BASE_AWAITING_RESPONSE_DIR = f"{VOICE_CUES_DIR}awaiting_response_cues/{configuration.voice.language}/{configuration.voice.voice_gender}/"
+BASE_WAKE_UP_DIR = f"{VOICE_CUES_DIR}wake_word_cues/{LANG_CHOICE}/{LANG_GENDER}/"
+BASE_STOP_CHAT_DIR = f"{VOICE_CUES_DIR}stop_chat_cues/{LANG_CHOICE}/{LANG_GENDER}/"
+BASE_CHAT_MODE_DIR = f"{VOICE_CUES_DIR}chat_mode_activated_cues/{LANG_CHOICE}/{LANG_GENDER}/"
+BASE_AUDIO_ERROR_DIR = f"{VOICE_CUES_DIR}audio_error_cues/{LANG_CHOICE}/{LANG_GENDER}/"
+BASE_AWAITING_RESPONSE_DIR = f"{VOICE_CUES_DIR}awaiting_response_cues/{LANG_CHOICE}/{LANG_GENDER}/"
 
 MEMORY_CONTEXT = 0
 
