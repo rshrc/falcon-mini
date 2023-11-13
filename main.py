@@ -98,14 +98,18 @@ LANG_GENDER = configuration.voice.voice_gender
 
 tts = TextToSpeechPlayer(configuration.voice.url, LANG_CHOICE, LANG_GENDER)
 
-
 WORKING_DIR = os.getcwd()
 VOICE_CUES_DIR = f"{WORKING_DIR}/assets/voice_cues/"
-BASE_WAKE_UP_DIR = f"{VOICE_CUES_DIR}wake_word_cues/{LANG_CHOICE}/{LANG_GENDER}/"
-BASE_STOP_CHAT_DIR = f"{VOICE_CUES_DIR}stop_chat_cues/{LANG_CHOICE}/{LANG_GENDER}/"
-BASE_CHAT_MODE_DIR = f"{VOICE_CUES_DIR}chat_mode_activated_cues/{LANG_CHOICE}/{LANG_GENDER}/"
-BASE_AUDIO_ERROR_DIR = f"{VOICE_CUES_DIR}audio_error_cues/{LANG_CHOICE}/{LANG_GENDER}/"
-BASE_AWAITING_RESPONSE_DIR = f"{VOICE_CUES_DIR}awaiting_response_cues/{LANG_CHOICE}/{LANG_GENDER}/"
+
+def setup_directory(dir_type):
+    return f"{VOICE_CUES_DIR}{dir_type}/{LANG_CHOICE}/{LANG_GENDER}/"
+
+
+BASE_WAKE_UP_DIR = setup_directory('wake_word_cues')
+BASE_STOP_CHAT_DIR = setup_directory('stop_chat_cues')
+BASE_CHAT_MODE_DIR = setup_directory('chat_mode_activated_cues')
+BASE_AUDIO_ERROR_DIR = setup_directory('audio_error_cues')
+BASE_AWAITING_RESPONSE_DIR = setup_directory('awaiting_response_cues')
 
 MEMORY_CONTEXT = 0
 
